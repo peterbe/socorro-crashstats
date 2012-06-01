@@ -1,3 +1,6 @@
+import os
+import shutil
+import tempfile
 import datetime
 import mock
 from django.test import TestCase
@@ -50,7 +53,6 @@ class TestModels(TestCase):
             info = api.get('747237', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            rget.side_effect = mocked_get
             info = api.get('747238', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])
 
@@ -287,16 +289,19 @@ class TestModelsWithFileCaching(TestCase):
 
     def setUp(self):
         super(TestModelsWithFileCaching, self).setUp()
+        self.tempdir = tempfile.mkdtemp()
         # Using CACHE_MIDDLEWARE_FILES is mainly for debugging but good to test
         self._cache_middleware = settings.CACHE_MIDDLEWARE
         self._cache_middleware_files = settings.CACHE_MIDDLEWARE_FILES
         settings.CACHE_MIDDLEWARE = True
-        settings.CACHE_MIDDLEWARE_FILES = True
+        settings.CACHE_MIDDLEWARE_FILES = self.tempdir
 
     def tearDown(self):
         super(TestModelsWithFileCaching, self).tearDown()
         settings.CACHE_MIDDLEWARE = self._cache_middleware
         settings.CACHE_MIDDLEWARE_FILES = self._cache_middleware_files
+        if os.path.isdir(self.tempdir):
+            shutil.rmtree(self.tempdir)
 
     def test_bugzilla_api_to_file(self):
         model = models.BugzillaBugInfo
@@ -320,6 +325,5 @@ class TestModelsWithFileCaching(TestCase):
             info = api.get('747237', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
 
-            rget.side_effect = mocked_get
             info = api.get('747238', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])

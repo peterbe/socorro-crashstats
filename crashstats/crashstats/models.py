@@ -1,8 +1,7 @@
 import os
 import urlparse
 import json
-import datetime
-
+import logging
 import requests
 
 from django.conf import settings
@@ -43,6 +42,9 @@ class SocorroCommon(object):
     cache_seconds = 60 * 60
 
     def fetch(self, url, headers=None, method='get'):
+        if url.startswith('/'):
+            url = self._complete_url(url)
+
         if not headers:
             if self.http_host:
                 headers = {'Host': self.http_host}
@@ -73,6 +75,7 @@ class SocorroCommon(object):
                       '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
 
                 if os.path.isfile(cache_file):
+                    logging.debug("Reading from %s" % cache_file)
                     return json.load(open(cache_file))
 
         if settings.CACHE_MIDDLEWARE:
@@ -89,16 +92,16 @@ class SocorroCommon(object):
         else:
             raise ValueError(method)
         resp = request_method(url=url, auth=auth, headers=headers)
+        #print "RESP", repr(resp)
+        #print repr(resp.content)
         if not resp.status_code == 200:
             raise BadStatusCodeError('%s: on: %s' % (resp.status_code, url))
 
-        #print "RESP", repr(resp)
-        #print repr(resp.content)
-
         result = json.loads(resp.content)
-        json.dump(result, open('/tmp/resp.json', 'w'), indent=2)
+        #json.dump(result, open('/tmp/resp.json', 'w'), indent=2)
 
         if cache_key:
+            #print "SETTING", cache_key, repr(str(result)[:100])
             cache.set(cache_key, result, self.cache_seconds)
             if cache_file:
                 if not os.path.isdir(os.path.dirname(cache_file)):
@@ -106,6 +109,13 @@ class SocorroCommon(object):
                 json.dump(result, open(cache_file, 'w'), indent=2)
 
         return result
+
+    def _complete_url(self, url):
+        if url.startswith('/'):
+            if not getattr(self, 'base_url', None):
+                raise NotImplementedError("No base_url defined in context")
+            url = '%s%s' % (self.base_url, url)
+        return url
 
 
 class SocorroMiddleware(SocorroCommon):
@@ -115,19 +125,14 @@ class SocorroMiddleware(SocorroCommon):
     username = settings.MWARE_USERNAME
     password = settings.MWARE_PASSWORD
 
-    def fetch(self, url, *args, **kwargs):
-        url = self._complete_url(url)
-        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
+#    def fetch(self, url, *args, **kwargs):
+#        url = self._complete_url(url)
+#        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
 
     def post(self, url, payload):
         url = self._complete_url(url)
         headers = {'Host': self.http_host}
         return self.fetch(url, headers=headers, method='post')
-
-    def _complete_url(self, url):
-        if url.startswith('/'):
-            url = '%s%s' % (self.base_url, url)
-        return url
 
 
 class CurrentVersions(SocorroMiddleware):
@@ -260,8 +265,8 @@ class BugzillaAPI(SocorroCommon):
     base_url = 'https://api-dev.bugzilla.mozilla.org/0.9'
     username = password = None
 
-    def get(self, *args, **kwargs):
-        raise NotImplementedError("You're supposed to override this")
+#    def get(self, *args, **kwargs):
+#        raise NotImplementedError("You're supposed to override this")
 
 
 class BugzillaBugInfo(BugzillaAPI):
@@ -272,34 +277,10 @@ class BugzillaBugInfo(BugzillaAPI):
         if isinstance(fields, basestring):
             fields = [fields]
         params = {
-            'base_url': self.base_url,
             'bugs': ','.join(bugs),
             'fields': ','.join(fields),
         }
         headers = {'Accept': 'application/json',
                    'Content-Type': 'application/json'}
-        url = '%(base_url)s/bug?id=%(bugs)s&include_fields=%(fields)s' % params
+        url = ('/bug?id=%(bugs)s&include_fields=%(fields)s' % params)
         return self.fetch(url, headers)
-
-
-class CrashAnalysis(SocorroCommon):
-    base_url = 'https://crash-analysis.mozilla.com/crash_analysis'
-    http_host = 'crash-analysis.mozilla.com'
-
-    def correlation(self, product, version, correlation_type):
-        yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-        params = {
-            'base_url': self.base_url,
-            'date': yesterday.strftime('%Y%m%d'),
-            'product': product,
-            'version': version
-        }
-        url = '%(base_url)s/%(date)s/%(date)s_%(product)s_%(version)s' % params
-        if correlation_type == 'cpu':
-            url += '-core-counts.txt'
-        elif correlation_type == 'addon':
-            url += '-interesting-addons.txt'
-        elif correlation_type == 'module':
-            url += '-interesting-modules.txt'
-
-        return requests.get(url, verify=False).content
