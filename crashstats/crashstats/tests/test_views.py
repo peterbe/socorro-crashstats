@@ -114,7 +114,6 @@ class TestViews(TestCase):
             self.assertEqual(response.status_code, 200)
             # XXX: we should maybe do some light tests on the response.content
             # see mocked_get() above
-            self.assertTrue('Firefox 19.0' in response.content)
 
             # now, let's do it with versions
             url = reverse('crashstats.products',
