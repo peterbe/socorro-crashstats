@@ -7,3 +7,6 @@ CACHES = {
         'LOCATION': 'unique-snowflake'
     }
 }
+
+CACHE_MIDDLEWARE = True
+CACHE_MIDDLEWARE_FILES = False

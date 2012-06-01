@@ -18,18 +18,12 @@ class TestModels(TestCase):
 
     def setUp(self):
         super(TestModels, self).setUp()
-        # this temporary setting like this is to assert that
-        # we use production style settings when running tests
-        self._cache_middleware = settings.CACHE_MIDDLEWARE
-        self._cache_middleware_files = settings.CACHE_MIDDLEWARE_FILES
-        settings.CACHE_MIDDLEWARE = True
-        settings.CACHE_MIDDLEWARE_FILES = False
+        # thanks to settings_test.py
+        assert settings.CACHE_MIDDLEWARE
+        assert not settings.CACHE_MIDDLEWARE_FILES
 
     def tearDown(self):
         super(TestModels, self).tearDown()
-        # reset certain settings
-        settings.CACHE_MIDDLEWARE = self._cache_middleware
-        settings.CACHE_MIDDLEWARE_FILES = self._cache_middleware_files
 
     def test_bugzilla_api(self):
         model = models.BugzillaBugInfo
