@@ -1,14 +1,12 @@
 import logging
 import json
 import datetime
-import time
-import os
 import functools
 from collections import defaultdict
 from django import http
 from django.shortcuts import render
+from django.conf import settings
 
-from funfactory.log import log_cef
 from session_csrf import anonymous_csrf
 
 from . import models
@@ -34,20 +32,20 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
         points = defaultdict(int)
 
         for s in version['statistics']:
-            time = utils.unixtime(s['date'], millis=True)
-            if time in points:
-                (crashes, users) = points[time]
+            time_ = utils.unixtime(s['date'], millis=True)
+            if time_ in points:
+                (crashes, users) = points[time_]
             else:
                 crashes = users = 0
             users += s['users']
             crashes += s['crashes']
-            points[time] = (crashes, users)
+            points[time_] = (crashes, users)
 
         for day in utils.daterange(start_date, end_date):
-            time = utils.unixtime(day, millis=True)
+            time_ = utils.unixtime(day, millis=True)
 
-            if time in points:
-                (crashes, users) = points[time]
+            if time_ in points:
+                (crashes, users) = points[time_]
                 t = throttled[version['version']]
                 if t != 100:
                     t *= 100
@@ -55,50 +53,68 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
                     logging.warning('no ADU data for %s' % day)
                     continue
                 logging.debug(users)
-                ratio = (float(crashes) / float(users) ) * t
+                ratio = float(crashes) / float(users) * t
             else:
                 ratio = None
 
-            graph_data['ratio%s' % i].append([int(time), ratio])
+            graph_data['ratio%s' % i].append([int(time_), ratio])
 
     return graph_data
 
-# FIXME validate/scrub all info
-# TODO would be better as a decorator (or a context processor -- peterbe)
-def _basedata(product=None, version=None):
-    data = {}
-    api = models.CurrentVersions()
-    data['currentversions'] = api.get()
-    for release in data['currentversions']:
-        if product == release['product']:
-            data['product'] = product
-            break
-    for release in data['currentversions']:
-        if version == release['version']:
-            data['version'] = version
-            break
-    return data
+
+def set_base_data(view):
+
+    def _basedata(product=None, version=None):
+        data = {}
+        api = models.CurrentVersions()
+        data['currentversions'] = api.get()
+        for release in data['currentversions']:
+            if product == release['product']:
+                data['product'] = product
+                break
+        for release in data['currentversions']:
+            if version == release['version']:
+                data['version'] = version
+                break
+        if product is None:
+            # not opininated URL
+            if not data.get('product'):
+                data['product'] = settings.DEFAULT_PRODUCT
+        elif product != data.get('product'):
+            raise http.Http404("Not a recognized product")
+        return data
+
+    @functools.wraps(view)
+    def inner(request, *args, **kwargs):
+        product = kwargs.get('product', None)
+        version = kwargs.get('version', None)
+        for key, value in _basedata(product, version).items():
+            setattr(request, key, value)
+        return view(request, *args, **kwargs)
+
+    return inner
 
 
+@set_base_data
 def products(request, product, versions=None):
-    data = _basedata(product)
+    data = {}
 
     # FIXME hardcoded default, find a better place for this to live
     os_names = ['Windows', 'Mac', 'Linux']
 
     duration = request.GET.get('duration')
 
-    if duration is None or duration not in ['3','7','14']:
+    if duration is None or duration not in ['3', '7', '14']:
         duration = 7
     else:
-       duration = int(duration)
+        duration = int(duration)
 
     data['duration'] = duration
 
     if versions is None:
         versions = []
-        for release in data['currentversions']:
-            if release['product'] == product and release['featured']:
+        for release in request.currentversions:
+            if release['product'] == request.product and release['featured']:
                 versions.append(release['version'])
     else:
         versions = versions.split(';')
@@ -113,17 +129,18 @@ def products(request, product, versions=None):
     adubyday = mware.get(product, versions, os_names,
                          start_date, end_date)
 
-    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
+    data['graph_data'] = json.dumps(
+        plot_graph(start_date, end_date, adubyday, request.currentversions)
+    )
     data['report'] = 'products'
-
     return render(request, 'crashstats/products.html', data)
 
 
+@set_base_data
 @anonymous_csrf
 def topcrasher(request, product=None, version=None, days=None, crash_type=None,
                os_name=None):
-
-    data = _basedata(product, version)
+    data = {}
 
     if days not in ['1', '3', '7', '14', '28']:
         days = 7
@@ -172,8 +189,9 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     return render(request, 'crashstats/topcrasher.html', data)
 
 
+@set_base_data
 def daily(request):
-    data = _basedata()
+    data = {}
 
     product = request.GET.get('p')
     if product is None:
@@ -181,8 +199,8 @@ def daily(request):
     data['product'] = product
 
     versions = []
-    for release in data['currentversions']:
-        if release['product'] == product and release['featured']:
+    for release in request.currentversions:
+        if release['product'] == request.product and release['featured']:
             versions.append(release['version'])
 
     os_names = ['Windows', 'Mac', 'Linux']
@@ -193,26 +211,31 @@ def daily(request):
     api = models.ADUByDay()
     adubyday = api.get(product, versions, os_names, start_date, end_date)
 
-    data['graph_data'] = json.dumps(plot_graph(start_date, end_date, adubyday, data['currentversions']))
+    data['graph_data'] = json.dumps(
+        plot_graph(start_date, end_date, adubyday, request.currentversions)
+    )
     data['report'] = 'daily'
 
     return render(request, 'crashstats/daily.html', data)
 
 
+@set_base_data
 def builds(request, product=None):
-    data = _basedata(product)
-
+    data = {}
     data['report'] = 'builds'
     return render(request, 'crashstats/builds.html', data)
 
-def hangreport(request, product=None, version=None):
-    data = _basedata(product, version)
 
+@set_base_data
+def hangreport(request, product=None, version=None):
+    data = {}
     data['report'] = 'hangreport'
     return render(request, 'crashstats/hangreport.html', data)
 
+
+@set_base_data
 def topchangers(request, product=None, versions=None):
-    data = _basedata(product)
+    data = {}
 
     try:
         duration = int(request.GET.get('duration', 7))
@@ -224,13 +247,13 @@ def topchangers(request, product=None, versions=None):
 
     all_versions = []
     if versions is None:
-        for release in data['currentversions']:
-            if release['product'] == product and release['featured']:
+        for release in request.currentversions:
+            if release['product'] == request.product and release['featured']:
                 all_versions.append(release['version'])
     else:
         # xxx: why is it called "versions" when it's a single value?
-        possible_versions = [x['version'] for x in data['currentversions']
-                             if product is None or x['product'] == product]
+        possible_versions = [x['version'] for x in request.currentversions
+                             if x['product'] == request.product]
         if versions not in possible_versions:
             # hmm... should this be a 404 instead?
             return http.HttpResponseBadRequest("Unrecognized version")
@@ -265,32 +288,35 @@ def topchangers(request, product=None, versions=None):
     return render(request, 'crashstats/topchangers.html', data)
 
 
+@set_base_data
 def report_index(request, crash_id=None):
-    data = _basedata()
+    data = {}
 
-    mware = SocorroMiddleware()
-    data['report'] = mware.report_index(crash_id)
+    api = models.ReportIndex()
+    data['report'] = api.get(crash_id)
 
     return render(request, 'crashstats/report_index.html', data)
 
 
+@set_base_data
 def report_list(request):
-    data = _basedata()
+    data = {}
 
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
     start_date = request.GET.get('date')
     result_number = 250
 
-    mware = SocorroMiddleware()
-    data['report_list'] = mware.report_list(signature, product_version,
-                                            start_date, result_number)
+    api = models.ReportList()
+    data['report_list'] = api.get(signature, product_version,
+                                  start_date, result_number)
 
     return render(request, 'crashstats/report_list.html', data)
 
 
+@set_base_data
 def query(request):
-    data = _basedata()
+    data = {}
 
     api = models.Search()
     # XXX why on earth are these numbers hard-coded?
@@ -301,9 +327,8 @@ def query(request):
     return render(request, 'crashstats/query.html', data)
 
 
+@utils.json_view
 def buginfo(request, signatures=None):
-    data = _basedata()
-
     form = forms.BugInfoForm(request.GET)
     if not form.is_valid():
         return http.HttpResponseBadRequest(str(form.errors))
@@ -312,15 +337,12 @@ def buginfo(request, signatures=None):
     fields = form.cleaned_data['include_fields']
 
     bzapi = models.BugzillaBugInfo()
-    data['bugs'] = json.dumps(bzapi.get(bugs, fields))
-
-    return render(request, 'crashstats/buginfo.html', data)
+    return bzapi.get(bugs, fields)
 
 
+@set_base_data
 @utils.json_view
 def plot_signature(request, product, version, start_date, end_date, signature):
-    data = _basedata(product, version)
-
     date_format = '%Y-%m-%d'
     try:
         start_date = datetime.datetime.strptime(start_date, date_format)
@@ -352,18 +374,17 @@ def plot_signature(request, product, version, start_date, end_date, signature):
 
 @utils.json_view
 def signature_summary(request):
-    data = _basedata()
+    #try:
+    #    range_value = int(request.GET.get('range_value'))
+    #except ValueError, msg:
+    #    return http.HttpResponseBadRequest(str(msg))
 
-    try:
-        range_value = int(request.GET.get('range_value'))
-    except ValueError, msg:
-        return http.HttpResponseBadRequest(str(msg))
-
-    range_unit = request.GET.get('range_unit')
+    #range_unit = request.GET.get('range_unit')
     signature = request.GET.get('signature')
-    product_version = request.GET.get('version')
+    #product_version = request.GET.get('version')
     try:
-        start_date = datetime.datetime.strptime(request.GET.get('date'), '%Y-%m-%d')
+        start_date = datetime.datetime.strptime(request.GET.get('date'),
+                                                '%Y-%m-%d')
     except ValueError, msg:
         return http.HttpResponseBadRequest(str(msg))
     end_date = datetime.datetime.utcnow()
@@ -382,9 +403,9 @@ def signature_summary(request):
     result = {}
     signature_summary = {}
     for r in report_types:
-         name = report_types[r]
-         result[name] = api.get(r, signature, start_date, end_date)
-         signature_summary[name] = []
+        name = report_types[r]
+        result[name] = api.get(r, signature, start_date, end_date)
+        signature_summary[name] = []
 
     # FIXME fix JS so it takes above format..
     for r in result['architectures']:

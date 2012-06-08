@@ -28,15 +28,23 @@ class TestViews(TestCase):
             def mocked_get(url, **options):
                 if 'current/versions' in url:
                     return Response("""
-                        {"currentversions": [{
-                          "product": "Firefox",
+                        {"currentversions": [
+                         {"product": "Firefox",
                           "throttle": "100.00",
                           "end_date": "2012-05-10 00:00:00",
                           "start_date": "2012-03-08 00:00:00",
                           "featured": true,
                           "version": "19.0",
                           "release": "Beta",
-                          "id": 922}]
+                          "id": 922},
+                         {"product": "Camino",
+                          "throttle": "99.00",
+                          "end_date": "2012-05-10 00:00:00",
+                          "start_date": "2012-03-08 00:00:00",
+                          "featured": true,
+                          "version": "9.5",
+                          "release": "Alpha",
+                          "id": 921}]
                           }
                           """)
                 raise NotImplementedError(url)
@@ -108,6 +116,11 @@ class TestViews(TestCase):
 
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
+
+    def test_products_with_unrecognized_product(self):
+        url = reverse('crashstats.products', args=('NeverHeardOf',))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
 
     def test_topcrasher(self):
         url = reverse('crashstats.topcrasher',
@@ -329,10 +342,6 @@ class TestViews(TestCase):
 
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
-
-            # invalid range_value
-            response = self.client.get(url, {'range_value': 'xxx'})
-            self.assertEqual(response.status_code, 400)
 
             # invalid date
             response = self.client.get(url, {'range_value': '1',
