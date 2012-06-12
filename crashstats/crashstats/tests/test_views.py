@@ -37,6 +37,14 @@ class TestViews(TestCase):
                           "version": "19.0",
                           "release": "Beta",
                           "id": 922},
+                         {"product": "Firefox",
+                          "throttle": "100.00",
+                          "end_date": "2012-05-10 00:00:00",
+                          "start_date": "2012-03-08 00:00:00",
+                          "featured": true,
+                          "version": "18.0",
+                          "release": "Stable",
+                          "id": 920},
                          {"product": "Camino",
                           "throttle": "99.00",
                           "end_date": "2012-05-10 00:00:00",
@@ -110,10 +118,21 @@ class TestViews(TestCase):
             # XXX: we should maybe do some light tests on the response.content
             # see mocked_get() above
 
-            # now, let's do it with versions
+            # now, let's do it with crazy versions
             url = reverse('crashstats.products',
-                          args=('Firefox', '12;13'))
+                          args=('Firefox', '19.0;99'))
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 404)
 
+            # more crazy versions
+            url = reverse('crashstats.products',
+                          args=('Firefox', '99'))
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 404)
+
+            # now, let's do it with good versions
+            url = reverse('crashstats.products',
+                          args=('Firefox', '18.0;19.0'))
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
 
@@ -124,7 +143,7 @@ class TestViews(TestCase):
 
     def test_topcrasher(self):
         url = reverse('crashstats.topcrasher',
-                      args=('Firefox', '19'))
+                      args=('Firefox', '19.0'))
 
         def mocked_post(**options):
             assert 'by/signatures' in options['url'], options['url']
@@ -297,11 +316,11 @@ class TestViews(TestCase):
 
                 # invalid version for the product name
                 response = self.client.get(bad_url)
-                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.status_code, 404)
 
                 # invalid version for the product name
                 response = self.client.get(bad_url2)
-                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.status_code, 404)
 
                 # not an integer
                 response = self.client.get(url, {'duration': 'xxx'})

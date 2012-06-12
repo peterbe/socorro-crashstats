@@ -17,7 +17,7 @@ from . import utils
 def plot_graph(start_date, end_date, adubyday, currentversions):
     throttled = {}
     for v in currentversions:
-        if v['product'] == adubyday['product'] and v['featured']:
+        if v['product'] == adubyday['product']:
             throttled[v['version']] = float(v['throttle'])
 
     graph_data = {
@@ -30,7 +30,6 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
         graph_data['item%s' % i] = version['version']
         graph_data['ratio%s' % i] = []
         points = defaultdict(int)
-
         for s in version['statistics']:
             time_ = utils.unixtime(s['date'], millis=True)
             if time_ in points:
@@ -64,31 +63,46 @@ def plot_graph(start_date, end_date, adubyday, currentversions):
 
 def set_base_data(view):
 
-    def _basedata(product=None, version=None):
+    def _basedata(product=None, versions=None):
+        """
+        from @product and @versions transfer to
+        a dict. If there's any left-over, raise a 404 error
+        """
         data = {}
         api = models.CurrentVersions()
         data['currentversions'] = api.get()
+        if versions is None:
+            versions = []
+        else:
+            versions = versions.split(';')
+
         for release in data['currentversions']:
             if product == release['product']:
                 data['product'] = product
-                break
-        for release in data['currentversions']:
-            if version == release['version']:
-                data['version'] = version
-                break
+                if release['version'] in versions:
+                    versions.remove(release['version'])
+                    if 'versions' not in data:
+                        data['versions'] = []
+                    data['versions'].append(release['version'])
+
         if product is None:
-            # not opininated URL
+            # thus a view that doesn't have a product in the URL
+            # e.g. like /query
             if not data.get('product'):
                 data['product'] = settings.DEFAULT_PRODUCT
         elif product != data.get('product'):
             raise http.Http404("Not a recognized product")
+
+        if product and versions:
+            raise http.Http404("Not a recognized version for that product")
+
         return data
 
     @functools.wraps(view)
     def inner(request, *args, **kwargs):
         product = kwargs.get('product', None)
-        version = kwargs.get('version', None)
-        for key, value in _basedata(product, version).items():
+        versions = kwargs.get('versions', None)
+        for key, value in _basedata(product, versions).items():
             setattr(request, key, value)
         return view(request, *args, **kwargs)
 
@@ -128,7 +142,6 @@ def products(request, product, versions=None):
     mware = models.ADUByDay()
     adubyday = mware.get(product, versions, os_names,
                          start_date, end_date)
-
     data['graph_data'] = json.dumps(
         plot_graph(start_date, end_date, adubyday, request.currentversions)
     )
@@ -138,8 +151,8 @@ def products(request, product, versions=None):
 
 @set_base_data
 @anonymous_csrf
-def topcrasher(request, product=None, version=None, days=None, crash_type=None,
-               os_name=None):
+def topcrasher(request, product=None, versions=None, days=None,
+               crash_type=None, os_name=None):
     data = {}
 
     if days not in ['1', '3', '7', '14', '28']:
@@ -160,7 +173,7 @@ def topcrasher(request, product=None, version=None, days=None, crash_type=None,
     data['os_name'] = os_name
 
     api = models.TCBS()
-    tcbs = api.get(product, version, crash_type, end_date,
+    tcbs = api.get(product, versions, crash_type, end_date,
                     duration=(days * 24), limit='300')
 
     signatures = [c['signature'] for c in tcbs['crashes']]
@@ -342,7 +355,8 @@ def buginfo(request, signatures=None):
 
 @set_base_data
 @utils.json_view
-def plot_signature(request, product, version, start_date, end_date, signature):
+def plot_signature(request, product, versions, start_date, end_date,
+                   signature):
     date_format = '%Y-%m-%d'
     try:
         start_date = datetime.datetime.strptime(start_date, date_format)
@@ -354,7 +368,7 @@ def plot_signature(request, product, version, start_date, end_date, signature):
     duration = diff.days * 24.0 + diff.seconds / 3600.0
 
     api = models.SignatureTrend()
-    sigtrend = api.get(product, version, signature, end_date, duration)
+    sigtrend = api.get(product, versions, signature, end_date, duration)
 
     graph_data = {
         'startDate': sigtrend['start_date'],
