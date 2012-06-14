@@ -21,7 +21,14 @@ def _clean_path(path):
     """
     path = iri_to_uri(path)
     path = path.replace(' ', '_')
-    path = '/'.join(slugify(x) for x in path.split('/'))
+    parts = []
+    for part in path.split('/'):
+        part = slugify(part)
+        if len(part) > 100:
+            # then we have to hash it :(
+            part = md5_constructor(part).hexdigest()
+        parts.append(part)
+    path = '/'.join(parts)
     if path.startswith('/'):
         path = path[1:]
     return path
@@ -59,24 +66,25 @@ class SocorroCommon(object):
         cache_key = None
         cache_file = None
         if settings.CACHE_MIDDLEWARE_FILES:
-            root = settings.CACHE_MIDDLEWARE_FILES
-            if not isinstance(root, basestring):
+            cache_file = settings.CACHE_MIDDLEWARE_FILES
+
+            if not isinstance(cache_file, basestring):
                 # e.g. it's a boolean
                 cache_file = os.path.join(settings.ROOT, 'models-cache')
-                split = urlparse.urlparse(url)
-                cache_file = os.path.join(cache_file,
-                                          split.netloc,
-                                          _clean_path(split.path))
-                if split.query:
-                    cache_file = os.path.join(cache_file,
-                                              _clean_query(split.query))
 
+            split = urlparse.urlparse(url)
+            cache_file = os.path.join(cache_file,
+                                      split.netloc,
+                                      _clean_path(split.path))
+            if split.query:
                 cache_file = os.path.join(cache_file,
-                      '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
+                                          _clean_query(split.query))
 
-                if os.path.isfile(cache_file):
-                    logging.debug("CACHE FILE HIT %s" % url)
-                    return json.load(open(cache_file))
+            cache_file = os.path.join(cache_file,
+                  '%s.json' % md5_constructor(iri_to_uri(url)).hexdigest())
+            if os.path.isfile(cache_file):
+                logging.debug("CACHE FILE HIT %s" % url)
+                return json.load(open(cache_file))
 
         if settings.CACHE_MIDDLEWARE:
             cache_key = md5_constructor(iri_to_uri(url)).hexdigest()

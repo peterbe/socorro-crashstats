@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import datetime
 import mock
+from django.core.cache import cache
 from django.test import TestCase
 from django.conf import settings
 from crashstats.crashstats import models
@@ -24,6 +25,7 @@ class TestModels(TestCase):
 
     def tearDown(self):
         super(TestModels, self).tearDown()
+        cache.clear()
 
     def test_bugzilla_api(self):
         model = models.BugzillaBugInfo
@@ -297,6 +299,7 @@ class TestModelsWithFileCaching(TestCase):
         settings.CACHE_MIDDLEWARE_FILES = self._cache_middleware_files
         if os.path.isdir(self.tempdir):
             shutil.rmtree(self.tempdir)
+        cache.clear()
 
     def test_bugzilla_api_to_file(self):
         model = models.BugzillaBugInfo
@@ -322,3 +325,23 @@ class TestModelsWithFileCaching(TestCase):
 
             info = api.get('747238', 'product')
             self.assertEqual(info['bugs'], [{u'product': u'DIFFERENT'}])
+
+    def test_caching_huge_url(self):
+        """This has come about because we're sometimes fetching URLs like
+        /buginfo/bug?bug_ids=736832,682573,751162,...really long and many...
+        """
+
+        model = models.BugzillaBugInfo
+        api = model()
+
+        with mock.patch('requests.get') as rget:
+            def mocked_get(**options):
+                assert options['url'].startswith(models.BugzillaAPI.base_url)
+                return Response('{"bugs": [{"product": "mozilla.org"}]}')
+
+            rget.side_effect = mocked_get
+            ids = [str(700000 + c) for c in range(50)]
+            # this is so huge as a file directory it would be hashed
+            # and should work
+            info = api.get(ids, 'product')
+            self.assertEqual(info['bugs'], [{u'product': u'mozilla.org'}])
