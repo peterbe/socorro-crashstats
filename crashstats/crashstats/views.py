@@ -246,6 +246,23 @@ def daily(request):
 def builds(request, product=None):
     data = {}
     data['report'] = 'builds'
+    api = models.DailyBuilds()
+    middleware_results = api.get(product)
+    middleware_results = sorted(middleware_results, key = lambda i: (i['date'], i['version']))
+    builds = []
+    current_date = None
+    current_version = None    
+    for build in middleware_results:
+        if (current_date != build['date'] or current_version != build['version']):
+            build['platform'] = [build['platform']]
+            build['date'] = datetime.datetime.strptime(build['date'], '%Y-%m-%d')
+            build['date'] = build['date'].strftime('%B %d, %Y')
+            builds.append(build)
+            current_date = build['date']
+            current_version = build['version']
+        else:
+            builds[-1]['platform'].append(build['platform'])
+    data['builds'] = builds
     return render(request, 'crashstats/builds.html', data)
 
 
