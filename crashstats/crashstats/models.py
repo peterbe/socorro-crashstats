@@ -291,7 +291,7 @@ class SignatureSummary(SocorroMiddleware):
 
 
 class DailyBuilds(SocorroMiddleware):
-    
+
     def get(self, product):
         params = {
             'product': product

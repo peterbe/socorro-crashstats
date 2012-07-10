@@ -287,16 +287,37 @@ class TestModels(TestCase):
         def mocked_get(**options):
             assert 'product' in options['url']
             return Response("""
-               [{"product": "WaterWolf", "repository": "esr", "buildid": 20120625000000, "beta_number": null, "platform": "Linux", "version": "1.0", "date": "2012-06-25", "build_type": "ESR"}, {"product": "WaterWolf", "repository": "esr", "buildid": 20120625000000, "beta_number": null, "platform": "Mac OS X", "version": "1.0", "date": "2012-06-25", "build_type": "ESR"}]
-              """)
+                [
+                  {
+                    "product": "SeaMonkey",
+                    "repository": "dev",
+                    "buildid": 20120625000007,
+                    "beta_number": null,
+                    "platform": "Mac OS X",
+                    "version": "5.0a1",
+                    "date": "2012-06-25",
+                    "build_type": "Nightly"
+                  },
+                  {
+                    "product": "SeaMonkey",
+                    "repository": "dev",
+                    "buildid": 20120625000007,
+                    "beta_number": null,
+                    "platform": "Windows",
+                    "version": "5.0a1",
+                    "date": "2012-06-25",
+                    "build_type": "Nightly"
+                  }
+                ]
+            """)
 
         with mock.patch('requests.get') as rget:
             rget.side_effect = mocked_get
-            today = datetime.datetime.utcnow()
-            r = api.get('WaterWolf')
-            self.assertEqual(r[0]['product'], 'WaterWolf')
+            r = api.get('SeaMonkey')
+            self.assertEqual(r[0]['product'], 'SeaMonkey')
             self.assertTrue(r[0]['date'])
             self.assertTrue(r[0]['version'])
+
 
 class TestModelsWithFileCaching(TestCase):
 
