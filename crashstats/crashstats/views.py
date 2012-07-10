@@ -249,8 +249,8 @@ def builds(request, product=None):
 
 
 @set_base_data
-def hangreport(request, product=None, version=None, listsize=50):
-    data = _basedata(product, version)
+def hangreport(request, product=None, versions=None, listsize=50):
+    data = {}
 
     page = request.GET.get('page')
     if page is None:
@@ -268,7 +268,7 @@ def hangreport(request, product=None, version=None, listsize=50):
     end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
 
     hangreport = models.HangReport()
-    data['hangreport'] = hangreport.get(product, version, end_date, duration,
+    data['hangreport'] = hangreport.get(product, versions, end_date, duration,
                                         listsize, page)
 
     data['report'] = 'hangreport'
