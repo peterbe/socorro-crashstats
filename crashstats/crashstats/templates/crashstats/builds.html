@@ -27,7 +27,7 @@
                     <td>{{ r.version }}</td>
                     <td>
                         {% for platform in r.platform %}
-						<a href="{{ url('crashstats.query') }}/query?product={{r.product}}&version={{r.product}}%3A{{r.version}}&build_id={{r.buildid}}&do_query=1">{{ platform }}</a>
+                            <a href="{{ url('crashstats.query') }}/?product={{r.product}}&amp;version={{r.product}}%3A{{r.version}}&amp;build_id={{r.buildid}}&amp;do_query=1">{{ platform }}</a>
                         {% endfor %}
                     </td>
                 </tr>
