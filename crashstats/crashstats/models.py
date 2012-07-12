@@ -198,6 +198,7 @@ class ProcessedCrash(SocorroMiddleware):
         url = '/crash/processed/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
+
 class RawCrash(SocorroMiddleware):
 
     def get(self, crash_id):
@@ -207,6 +208,7 @@ class RawCrash(SocorroMiddleware):
         url = '/crash/meta/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
+
 class CommentsBySignature(SocorroMiddleware):
 
     def get(self, signature, start_date, end_date, report_type='any',
@@ -215,11 +217,14 @@ class CommentsBySignature(SocorroMiddleware):
             'signature': signature,
             'start_date': start_date,
             'end_date': end_date,
-            'report_type': report_type, 
+            'report_type': report_type,
             'report_process': report_process
         }
-        url = '/crashes/comments/signature/%(signature)s/search_mode/contains/to/%(end_date)s/from/%(start_date)s/report_type/%(report_type)s/report_process/%(report_process)s/' % params
+        url = ('/crashes/comments/signature/%(signature)s/search_mode/'
+               'contains/to/%(end_date)s/from/%(start_date)s/report_type/'
+               '%(report_type)s/report_process/%(report_process)s/' % params)
         return self.fetch(url)
+
 
 class CrashPairsByCrashId(SocorroMiddleware):
 
@@ -228,8 +233,10 @@ class CrashPairsByCrashId(SocorroMiddleware):
             'crash_id': crash_id,
             'hang_id': hang_id
         }
-        url = '/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s' % params
+        url = ('/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s'
+               % params)
         return self.fetch(url)
+
 
 class Search(SocorroMiddleware):
 
@@ -292,11 +299,16 @@ class SignatureSummary(SocorroMiddleware):
 
 class DailyBuilds(SocorroMiddleware):
 
-    def get(self, product):
+    def get(self, product, version=None):
         params = {
             'product': product
         }
-        url = ('/products/builds/product/%(product)s' % params)
+        if version:
+            params['version'] = version
+            url = ('/products/builds/product/%(product)s/version/%(version)s'
+                   % params)
+        else:
+            url = ('/products/builds/product/%(product)s' % params)
         return self.fetch(url)
 
 
