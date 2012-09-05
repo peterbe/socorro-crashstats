@@ -18,6 +18,9 @@ INSTALLED_APPS = list(INSTALLED_APPS) + [
     # Example code. Can (and should) be removed for actual projects.
     '%s.crashstats' % PROJECT_MODULE,
     'jingo_offline_compressor',
+    '%s.auth' % PROJECT_MODULE,
+
+    'django.contrib.messages',
 ]
 
 
@@ -40,10 +43,26 @@ for app in MIDDLEWARE_EXCLUDE_CLASSES:
 
 MIDDLEWARE_CLASSES = tuple(MIDDLEWARE_CLASSES)
 
+# BrowserID configuration
+AUTHENTICATION_BACKENDS = [
+    'django_browserid.auth.BrowserIDBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 TEMPLATE_CONTEXT_PROCESSORS += (
     'crashstats.crashstats.context_processors.current_versions',
+    'django_browserid.context_processors.browserid_form',
 )
+
+# Always generate a CSRF token for anonymous users.
+ANON_ALWAYS = True
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'sqlite.crashstats.db',
+    }
+}
 
 # Tells the extract script what files to look for L10n in and what function
 # handles the extraction. The Tower library expects this.
@@ -117,3 +136,14 @@ COMPRESS_OFFLINE = True
 # Transitionally it might be safer to set this to False as we roll out the new
 # django re-write of Socorro.
 PERMANENT_LEGACY_REDIRECTS = True
+
+SITE_URL = 'http://localhost:8000'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL_FAILURE = 'auth:login_failure'
+ALLOWED_PERSONA_EMAILS = (
+    # fill this in in settings/local.py
+)
+
+# Use memcached for session storage
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

@@ -26,23 +26,19 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'anything'
+        'LOCATION': 'crashstats'
     }
 }
 
+ALLOWED_PERSONA_EMAILS = (
+    # fill this in
+)
+
+# This is needed for Persona to work!
+SITE_URL = 'http://notsetyet'
 
 TIME_ZONE = 'UTC'
 
-# We don't currently use a database, here is a working postgres+psycopg2
-# example in case we need it.
-
-# However, to run the test suite you need a database defined
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': ':memory:',                      # Or path to database file if using sqlite3.
-    }
-}
 
 #DATABASES = {
 #    'default': {

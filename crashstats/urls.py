@@ -25,6 +25,7 @@ jingo.env.add_extension(CompressorExtension)
 urlpatterns = patterns('',
     # Example:
     (r'', include(urls)),
+    (r'', include('crashstats.auth.urls', namespace='auth')),
 
     # Uncomment the admin/doc line below to enable admin documentation:
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
