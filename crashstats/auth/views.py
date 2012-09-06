@@ -20,14 +20,24 @@ def mozilla_browserid_verify(request):
             raise ValueError(
                 "No emails set up in `settings.ALLOWED_PERSONA_EMAILS`"
             )
-        if result and result['email'] in settings.ALLOWED_PERSONA_EMAILS:
-            user = auth.authenticate(assertion=assertion, audience=audience)
-            auth.login(request, user)
-            messages.success(
-                request,
-                'You have successfully logged in.'
-            )
-            return redirect(settings.LOGIN_REDIRECT_URL)
+
+        if result:
+            if result['email'] in settings.ALLOWED_PERSONA_EMAILS:
+                user = auth.authenticate(assertion=assertion,
+                                         audience=audience)
+                auth.login(request, user)
+                messages.success(
+                    request,
+                    'You have successfully logged in.'
+                )
+                return redirect(settings.LOGIN_REDIRECT_URL)
+            else:
+                messages.error(
+                    request,
+                    "You logged in as %s but you don't have sufficient "
+                    "privileges." % result['email']
+                )
+                return redirect('home')
     return redirect(settings.LOGIN_REDIRECT_URL_FAILURE)
 
 
