@@ -146,4 +146,4 @@ ALLOWED_PERSONA_EMAILS = (
 )
 
 # Use memcached for session storage
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache_db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
