@@ -34,9 +34,6 @@ ALLOWED_PERSONA_EMAILS = (
     # fill this in
 )
 
-# This is needed for Persona to work!
-SITE_URL = 'http://localhost:8000'
-
 TIME_ZONE = 'UTC'
 
 

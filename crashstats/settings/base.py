@@ -137,7 +137,9 @@ COMPRESS_OFFLINE = True
 # django re-write of Socorro.
 PERMANENT_LEGACY_REDIRECTS = True
 
+# This is needed for BrowserID to work!
 SITE_URL = 'http://localhost:8000'
+
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_REDIRECT_URL_FAILURE = 'auth:login_failure'
