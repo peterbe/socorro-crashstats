@@ -57,7 +57,7 @@
 
 /* Icon */
 .persona-button span:after{
-    background: url(../img/persona-logo.png) 10px center no-repeat;
+    background: url(/static/auth/img/persona-logo.png) 10px center no-repeat;
     content: '';
     display: block;
     width: 31px;
