@@ -108,3 +108,7 @@ OPERATING_SYSTEMS = (
     'Mac OS X',
     'Windows',
 )
+
+
+# we can because we use jingo_offline_compressor
+COMPRESS_OFFLINE = True
