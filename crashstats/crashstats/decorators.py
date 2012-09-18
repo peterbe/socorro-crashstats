@@ -30,6 +30,7 @@ def check_days_parameter(possible_days, default=_marker):
                         "'days' missing from request"
                     )
                 request.days = default
+            request.possible_days = possible_days
 
             return view(request, *args, **kwargs)
         return inner

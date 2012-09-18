@@ -12,7 +12,7 @@ class TestCheckDays(TestCase):
 
     def test_basics(self):
 
-        @decorators.check_days_parameter([1,2], 2)
+        @decorators.check_days_parameter([1, 2], 2)
         def view(request):
             days = request.days
             return http.HttpResponse(str(10000 + days))
@@ -38,7 +38,7 @@ class TestCheckDays(TestCase):
     def test_no_default(self):
         # if no default is passed, it has to be one of list of days
 
-        @decorators.check_days_parameter([1,2])
+        @decorators.check_days_parameter([1, 2])
         def view(request):
             days = request.days
             return http.HttpResponse(str(10000 + days))
@@ -53,10 +53,20 @@ class TestCheckDays(TestCase):
 
     def test_none_default(self):
 
-        @decorators.check_days_parameter([1,2], default=None)
+        @decorators.check_days_parameter([1, 2], default=None)
         def view(request):
             return http.HttpResponse(str(request.days))
 
         request = self.factory.get('/')
         response = view(request)
         self.assertEqual(response.content, 'None')
+
+    def test_using_possible_days(self):
+
+        @decorators.check_days_parameter([1, 2], 2)
+        def view(request):
+            return http.HttpResponse(str(request.possible_days))
+
+        request = self.factory.get('/')
+        response = view(request)
+        self.assertEqual(response.content, str([1, 2]))

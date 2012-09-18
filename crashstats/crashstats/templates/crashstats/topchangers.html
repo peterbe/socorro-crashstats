@@ -4,7 +4,7 @@
   <div class="page-heading">
     <h2>Top Changers for {{ product }} {{ versions|join(', ') }}</h2>
     <ul class="options">
-    {% for d in [3, 7, 14, 28] %}
+    {% for d in request.possible_days %}
       <li><a href="?days={{ d }}" {% if days == d %}class="selected"{% endif %}>{{ d }} days</a></li>
     {% endfor %}
     </ul>

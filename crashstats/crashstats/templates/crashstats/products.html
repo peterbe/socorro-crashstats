@@ -15,11 +15,11 @@
 <div id="mainbody">
     <div class="page-heading">
         <h2>{{ product }} Crash Data</h2>
-         <ul class="options">
-                <li><a href="?days=3" {% if days == 3 %} class="selected" {% endif %}>3 days</a></li>
-                <li><a href="?days=7" {% if days == 7 %} class="selected" {% endif %}>7 days</a></li>
-                <li><a href="?days=14" {% if days == 14 %} class="selected" {% endif %}>14 days</a></li>
-            </ul>
+        <ul class="options">
+        {% for d in request.possible_days %}
+            <li><a href="?days={{ d }}" {% if days == d %} class="selected" {% endif %}>{{ d }} days</a></li>
+        {% endfor %}
+        </ul>
     </div>
 
     <div class="panel">
