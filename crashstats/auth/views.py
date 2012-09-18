@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import auth
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
+from django.core.urlresolvers import reverse
 from django.contrib import messages
 
 from django_browserid.auth import get_audience, verify
@@ -22,6 +23,8 @@ def mozilla_browserid_verify(request):
             )
 
         if result:
+            home_url = reverse('crashstats.home',
+                               args=(settings.DEFAULT_PRODUCT,))
             if result['email'] in settings.ALLOWED_PERSONA_EMAILS:
                 user = auth.authenticate(assertion=assertion,
                                          audience=audience)
@@ -30,15 +33,15 @@ def mozilla_browserid_verify(request):
                     request,
                     'You have successfully logged in.'
                 )
-                return redirect(settings.LOGIN_REDIRECT_URL)
+                return redirect(home_url)
             else:
                 messages.error(
                     request,
                     "You logged in as %s but you don't have sufficient "
                     "privileges." % result['email']
                 )
-                return redirect('home')
-    return redirect(settings.LOGIN_REDIRECT_URL_FAILURE)
+                return redirect(home_url)
+    return redirect('auth:login_failure')
 
 
 def login_failure(request):

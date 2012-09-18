@@ -141,11 +141,15 @@ PERMANENT_LEGACY_REDIRECTS = True
 SITE_URL = 'http://localhost:8000'
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = 'home'
-LOGIN_REDIRECT_URL_FAILURE = 'auth:login_failure'
 ALLOWED_PERSONA_EMAILS = (
     # fill this in in settings/local.py
 )
 
 # Use memcached for session storage
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# we don't need bcrypt since we don't store real passwords
+PWD_ALGORITHM = 'sha512'
+
+# must be set but not applicable because we don't use bcrypt
+HMAC_KEYS = {'any': 'thing'}

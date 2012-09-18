@@ -6,7 +6,7 @@
 #INSTALLED_APPS = base.INSTALLED_APPS + ['debug_toolbar']
 
 CACHE_MIDDLEWARE = False
-# creates "./models-cache" dir 
+# creates "./models-cache" dir
 # only applicable if CACHE_MIDDLEWARE is True
 CACHE_MIDDLEWARE_FILES = True
 
@@ -105,3 +105,7 @@ SECRET_KEY = 'you must change this'
 # Common Event Format logging parameters
 #CEF_PRODUCT = 'Playdoh'
 #CEF_VENDOR = 'Mozilla'
+
+# If you intend to run without HTTPS such as local development,
+# then set this to False
+#SESSION_COOKIE_SECURE = False
