@@ -12,16 +12,9 @@ Clone vendor repositories
 Add the LESS Preprocessor
 -------------------------
 
-socorro-crashstats uses the LESS framework. In order to have your
-`.less`
-files compiled you need Nodejs and `lessc`.
+You need to [install less](http://lesscss.org/#-server-side-usage) and
+make sure it's available on your `PATH`.
 
-If you do not have Node.js installed, your first step is to get a Node.js
-installer for you environment from http://nodejs.org/
-
-Once installed run:
-
-    npm install -g less
 
 Create virtualenv and populate it
 --------
