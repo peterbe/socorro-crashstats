@@ -1,6 +1,6 @@
-import json
 import datetime
 import functools
+import json
 import math
 from collections import defaultdict
 from django import http
@@ -8,6 +8,7 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.syndication.views import Feed
+from django.utils.timezone import utc
 
 from session_csrf import anonymous_csrf
 
@@ -16,14 +17,21 @@ from . import forms
 from . import utils
 
 
+def utc_now():
+    return datetime.datetime.utcnow().replace(tzinfo=utc)
+
+
 def get_search_parameters(request):
+    """Return a dictionary of parameters for the search service with default
+    values.
+    """
     return {
         'signature': request.GET.get('signature'),
         'query': request.GET.get('query'),
         'products': request.GET.getlist('product'),
         'versions': request.GET.getlist('version'),
         'platforms': request.GET.getlist('platform'),
-        'end_date': request.GET.get('end_date'),
+        'end_date': request.GET.get('date'),
         'date_range_unit': request.GET.get('range_unit'),
         'date_range_value': request.GET.get('range_value'),
         'query_type': request.GET.get('query_type'),
@@ -134,7 +142,7 @@ def products(request, product, versions=None):
     if len(versions) == 1:
         data['version'] = versions[0]
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
     start_date = end_date - datetime.timedelta(days=duration + 1)
 
     mware = models.Crashes()
@@ -175,7 +183,7 @@ def topcrasher(request, product=None, versions=None, days=None,
     days = int(days)
     data['days'] = days
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
 
     if crash_type not in ['all', 'browser', 'plugin', 'content']:
         crash_type = 'browser'
@@ -233,7 +241,7 @@ def daily(request):
 
     os_names = settings.OPERATING_SYSTEMS
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
     start_date = end_date - datetime.timedelta(days=8)
 
     api = models.Crashes()
@@ -310,7 +318,7 @@ def hangreport(request, product=None, versions=None, listsize=100):
         return http.HttpResponseBadRequest('Invalid duration')
     data['duration'] = int(duration)
 
-    end_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+    end_date = utc_now().strftime('%Y-%m-%d')
 
     # FIXME refactor into common function
     if not versions:
@@ -384,7 +392,7 @@ def topchangers(request, product=None, versions=None, duration=7):
 
     data['versions'] = all_versions
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
 
     # FIXME hardcoded crash_type
     crash_type = 'browser'
@@ -437,7 +445,7 @@ def report_index(request, crash_id):
         [data['report']['signature']]
     )['bug_associations']
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
     start_date = end_date - datetime.timedelta(days=14)
 
     comments_api = models.CommentsBySignature()
@@ -476,7 +484,7 @@ def report_list(request):
         end_date = datetime.datetime.strptime(request.GET.get('date'),
                                               '%Y-%m-%d')
     else:
-        end_date = datetime.datetime.utcnow()
+        end_date = utc_now()
 
     duration = int(request.GET.get('range_value'))
     data['current_day'] = duration
@@ -558,6 +566,10 @@ def report_list(request):
 
 @set_base_data
 def query(request):
+    datetime_api_format = '%Y-%m-%dT%H:%M:%S'
+    datetime_ui_format = '%m/%d/%Y %H:%M:%S'
+    now = utc_now()
+
     data = {}
 
     results_per_page = 100
@@ -566,6 +578,8 @@ def query(request):
         data['current_page'] = int(request.GET.get('page', 1))
     except ValueError:
         return http.HttpResponseBadRequest('Invalid page')
+
+    data['results_offset'] = results_per_page * (data['current_page'] - 1)
 
     current_query = request.GET.copy()
     if 'page' in current_query:
@@ -581,24 +595,89 @@ def query(request):
     data['platforms'] = platforms
 
     params = get_search_parameters(request)
+    do_query = params['products'] or params['versions'] or params['end_date']
+
+    # Default values for some fields
+    if not params['products']:
+        params['products'] = [products.keys()[0]]
+    if not params['end_date']:
+        params['end_date'] = now.strftime(datetime_ui_format)
+    if not params['date_range_value']:
+        params['date_range_value'] = 1
+    if not params['date_range_unit']:
+        params['date_range_unit'] = 'weeks'
+    if not params['query_type']:
+        params['query_type'] = 'contains'
+    if not params['process_type']:
+        params['process_type'] = 'any'
+    if not params['hang_type']:
+        params['hang_type'] = 'any'
+    if not params['plugin_field']:
+        params['plugin_field'] = 'filename'
+    if not params['plugin_query_type']:
+        params['plugin_query_type'] = 'is_exactly'
+
+    # Convert query types for legacy
+    if params['query_type'] == 'exact':
+        params['query_type'] = 'is_exactly'
+    if params['query_type'] == 'startswith':
+        params['query_type'] = 'starts_with'
+    if params['plugin_query_type'] == 'exact':
+        params['plugin_query_type'] = 'is_exactly'
+    if params['plugin_query_type'] == 'exact':
+        params['plugin_query_type'] = 'is_exactly'
+
     data['params'] = params
     data['params_json'] = json.dumps(params)
 
-    api = models.Search()
+    data['query'] = {
+        'total': 0,
+        'total_count': 0,
+        'total_pages': 0
+    }
 
-    data['query'] = api.get(
-        terms=params['query'],
-        products=params['products'],
-        versions=params['versions'],
-        os=params['platforms'],
-        start_date=params['query'],
-        end_date=params['query'],
-        limit='100'
-    )
+    if do_query:
+        api = models.Search()
 
-    data['query']['total_pages'] = int(math.ceil(
-        data['query']['total'] / float(results_per_page)))
-    data['query']['total_count'] = data['query']['total']
+        end_date = datetime.datetime.strptime(
+            params['end_date'],
+            datetime_ui_format
+        ).replace(tzinfo=utc)
+
+        date_range_value = int(params['date_range_value'])
+        if params['date_range_unit'] == 'weeks':
+            date_delta = datetime.timedelta(weeks=date_range_value)
+        elif params['date_range_unit'] == 'days':
+            date_delta = datetime.timedelta(days=date_range_value)
+        elif params['date_range_unit'] == 'hours':
+            date_delta = datetime.timedelta(hours=date_range_value)
+        else:
+            date_delta = datetime.timedelta(weeks=1)
+
+        start_date = end_date - date_delta
+
+        data['query'] = api.get(
+            terms=params['query'],
+            products=params['products'],
+            versions=params['versions'],
+            os=params['platforms'],
+            start_date=start_date.strftime(datetime_api_format),
+            end_date=end_date.strftime(datetime_api_format),
+            search_mode=params['query_type'],
+            reasons=params['reason'],
+            build_ids=params['build_id'],
+            report_process=params['process_type'],
+            report_type=params['hang_type'],
+            plugin_in=params['plugin_field'],
+            plugin_search_mode=params['plugin_query_type'],
+            plugin_terms=params['plugin_query'],
+            result_number=results_per_page,
+            result_offset=data['results_offset']
+        )
+
+        data['query']['total_pages'] = int(math.ceil(
+            data['query']['total'] / float(results_per_page)))
+        data['query']['total_count'] = data['query']['total']
 
     return render(request, 'crashstats/query.html', data)
 
@@ -658,7 +737,7 @@ def signature_summary(request):
     signature = request.GET.get('signature')
     product_version = request.GET.get('version')
 
-    end_date = datetime.datetime.utcnow()
+    end_date = utc_now()
     start_date = end_date - datetime.timedelta(days=range_value)
 
     report_types = {
