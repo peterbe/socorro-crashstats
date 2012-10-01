@@ -26,7 +26,7 @@ BZAPI_BASE_URL = 'https://api-dev.bugzilla.mozilla.org/1.1'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'elmo'
+        'LOCATION': 'anything'
     }
 }
 
@@ -79,6 +79,9 @@ DEBUG = TEMPLATE_DEBUG = True
 # Is this a development instance? Set this to True on development/master
 # instances and False on stage/prod.
 DEV = True
+
+# Use offline compression (requires jingo_compressor)
+COMPRESS_OFFLINE = False
 
 # # Playdoh ships with sha512 password hashing by default. Bcrypt+HMAC is safer,
 # # so it is recommended. Please read <https://github.com/fwenzel/django-sha2#readme>,

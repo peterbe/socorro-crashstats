@@ -266,13 +266,13 @@ class TestModels(TestCase):
         api = model()
 
         def mocked_post(**options):
-            assert 'by/signatures' in options['url'], options['url']
-            assert options['data'] == {'id': 'Pickle::ReadBytes'}
-            return Response('{"bug_associations": ["123456789"]}')
+            assert '/bugs/' in options['url'], options['url']
+            assert options['data'] == {'signatures': 'Pickle::ReadBytes'}
+            return Response('{"hits": ["123456789"]}')
 
         rpost.side_effect = mocked_post
         r = api.get('Pickle::ReadBytes')
-        ok_(r['bug_associations'])
+        ok_(r['hits'])
 
     @mock.patch('requests.get')
     def test_signature_trend(self, rget):
