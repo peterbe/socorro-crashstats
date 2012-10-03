@@ -3,9 +3,12 @@ from django.conf.urls.defaults import patterns, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .crashstats import urls
+#from .base import views
 
 from funfactory.monkeypatches import patch
 patch()
+
+handler500 = 'crashstats.base.views.handler500'
 
 # funfactory puts the more limited CompressorExtension extension in
 # but we need the one from jingo_offline_compressor.jinja2ext otherwise we
