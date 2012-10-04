@@ -1,3 +1,4 @@
+import datetime
 import os
 import urlparse
 import json
@@ -5,6 +6,7 @@ import logging
 import requests
 import stat
 import time
+import urllib
 
 from django.conf import settings
 from django.core.cache import cache
@@ -142,6 +144,25 @@ class SocorroMiddleware(SocorroCommon):
         headers = {'Host': self.http_host}
         return self.fetch(url, headers=headers, method='post', data=payload)
 
+    def urlencode_params(self, params):
+        """in-place replacement URL encoding parameter values.
+        For example, if params == {'foo': 'bar1 bar2'}
+        it changes it to == {'foo': 'bar1%20bar2'}
+        """
+        for key, value in params.iteritems():
+            if isinstance(value, datetime.datetime):
+                # not easy! The format is too important to guess
+                raise ValueError(
+                    "Passed a datetime instance. Use .strftime() on it first!"
+                )
+            if isinstance(value, datetime.date):
+                # easy!
+                value = value.strftime('%Y-%m-%d')
+            if isinstance(value, unicode):
+                value = value.encode('utf-8')
+            if isinstance(value, basestring):
+                params[key] = urllib.quote(value).replace('/', '%2F')
+
 
 class CurrentVersions(SocorroMiddleware):
 
@@ -201,6 +222,7 @@ class Crashes(SocorroMiddleware):
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
         }
+        self.urlencode_params(params)
         url = ('/crashes/daily/product/%(product)s/versions/%(versions)s/'
                'from_date/%(start_date)s/to_date/%(end_date)s/'
                'date_range_type/report/' % params)
@@ -219,6 +241,8 @@ class TCBS(SocorroMiddleware):
             'duration': duration,
             'limit': limit,
         }
+        self.urlencode_params(params)
+
         url = ('/crashes/signatures/product/%(product)s/version/'
                '%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/'
                'duration/%(duration)s/limit/%(limit)s/' % params)
@@ -236,6 +260,7 @@ class ReportList(SocorroMiddleware):
             'result_number': result_number,
             'result_offset': result_offset,
         }
+        self.urlencode_params(params)
 
         url = ('/report/list/signature/%(signature)s/versions/'
                '%(product_versions)s/fields/signature/search_mode/contains/'
@@ -251,6 +276,7 @@ class ProcessedCrash(SocorroMiddleware):
         params = {
             'crash_id': crash_id,
         }
+        self.urlencode_params(params)
         url = '/crash/processed/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
@@ -261,6 +287,7 @@ class RawCrash(SocorroMiddleware):
         params = {
             'crash_id': crash_id,
         }
+        self.urlencode_params(params)
         url = '/crash/meta/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
@@ -276,6 +303,7 @@ class CommentsBySignature(SocorroMiddleware):
             'report_type': report_type,
             'report_process': report_process
         }
+        self.urlencode_params(params)
         url = ('/crashes/comments/signature/%(signature)s/search_mode/'
                'contains/to/%(end_date)s/from/%(start_date)s/report_type/'
                '%(report_type)s/report_process/%(report_process)s/' % params)
@@ -289,6 +317,7 @@ class CrashPairsByCrashId(SocorroMiddleware):
             'crash_id': crash_id,
             'hang_id': hang_id
         }
+        self.urlencode_params(params)
         url = ('/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s'
                % params)
         return self.fetch(url)
@@ -306,6 +335,7 @@ class HangReport(SocorroMiddleware):
             'listsize': listsize,
             'page': page
         }
+        self.urlencode_params(params)
         url = ('/reports/hang/p/%(product)s/v/%(version)s/end/%(end_date)s/'
                'duration/%(duration)s/listsize/%(listsize)s/page/%(page)s'
                % params)
@@ -393,6 +423,7 @@ class SignatureTrend(SocorroMiddleware):
             'duration': int(duration),
             'steps': steps,
         }
+        self.urlencode_params(params)
         url = ('/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/'
                '%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/'
                '%(steps)s' % params)
@@ -408,6 +439,7 @@ class SignatureSummary(SocorroMiddleware):
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d'),
         }
+        self.urlencode_params(params)
         url = ('/signaturesummary/report_type/%(report_type)s/signature/'
                '%(signature)s/start_date/%(start_date)s/end_date/'
                '%(end_date)s' % params)
