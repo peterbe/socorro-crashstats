@@ -1,3 +1,4 @@
+from nose.tools import eq_, ok_
 from django.conf import settings
 from django.test import TestCase
 
@@ -13,30 +14,30 @@ class TestViews(TestCase):
                                  {'assertion': assertion})
         return r
 
+    @property
+    def _home_url(self):
+        return reverse('crashstats.home', args=(settings.DEFAULT_PRODUCT,))
+
     def test_invalid(self):
         """Bad BrowserID form (i.e. no assertion) -> failure."""
         response = self._login_attempt(None, None)
-        self.assertRedirects(response,
-                             reverse(settings.LOGIN_REDIRECT_URL_FAILURE))
+        eq_(response.status_code, 302)
+        # not using assertRedirects because that makes it render the home URL
+        # which means we need to mock the calls to the middleware
+        ok_(self._home_url in response['Location'])
 
     def test_bad_verification(self):
         """Bad verification -> failure."""
         response = self._login_attempt(None)
-        self.assertRedirects(response,
-                             reverse(settings.LOGIN_REDIRECT_URL_FAILURE))
+        eq_(response.status_code, 302)
+        ok_(self._home_url in response['Location'])
 
     def test_bad_email(self):
         response = self._login_attempt('tmickel@mit.edu')
-        assert response.status_code == 302
-        # see comment in test_good_email() for why this is commented out
-        #self.assertRedirects(response,
-        #                     reverse(settings.LOGIN_REDIRECT_URL_FAILURE))
+        eq_(response.status_code, 302)
+        ok_(self._home_url in response['Location'])
 
     def test_good_email(self):
         response = self._login_attempt(settings.ALLOWED_PERSONA_EMAILS[0])
-        assert response.status_code == 302
-        # this below won't work because the homepage, which is what
-        # LOGIN_REDIRECT_URL is, also redirects so that assertRedirects()
-        # doesn't work at the moment.
-        #self.assertRedirects(response,
-        #                     reverse(settings.LOGIN_REDIRECT_URL))
+        eq_(response.status_code, 302)
+        ok_(self._home_url in response['Location'])
