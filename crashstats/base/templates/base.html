@@ -70,7 +70,7 @@
                     {% if request.user.is_active %}
                       {{ request.user.email }}
                       |
-                      <a href="/admin/WORK_HARDER">Admin</a>
+                      <a href="/admin">Admin</a>
                       |
                       <a href="{{ url('auth:logout') }}">Sign out</a>
                     {% else %}
