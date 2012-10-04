@@ -136,7 +136,7 @@ class SocorroMiddleware(SocorroCommon):
     password = settings.MWARE_PASSWORD
 
     default_date_format = '%Y-%m-%d'
-    default_datetime_format = '%Y-%m-%d %H:%M:%S'
+    default_datetime_format = '%Y-%m-%dT%H:%M:%S'
 
 #    def fetch(self, url, *args, **kwargs):
 #        url = self._complete_url(url)
