@@ -180,6 +180,9 @@
     <script src="{{ static('crashstats/js/jquery/plugins/jquery.cookies.2.2.0.js') }}"></script>
     <script src="{{ static('crashstats/js/socorro/nav.js') }}"></script>
     {% endcompress %}
+    {% if not request.user.is_active %}
+      {{ browserid_form.media }}
+    {% endif %}
     {% endblock %}
   </body>
 </html>

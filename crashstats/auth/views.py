@@ -16,7 +16,7 @@ def mozilla_browserid_verify(request):
     home_url = reverse('crashstats.home',
                        args=(settings.DEFAULT_PRODUCT,))
     form = BrowserIDForm(request.POST)
-    if form.is_valid() and 0:
+    if form.is_valid():
         assertion = form.cleaned_data['assertion']
         audience = get_audience(request)
         result = verify(assertion, audience)
