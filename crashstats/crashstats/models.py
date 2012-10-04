@@ -135,6 +135,9 @@ class SocorroMiddleware(SocorroCommon):
     username = settings.MWARE_USERNAME
     password = settings.MWARE_PASSWORD
 
+    default_date_format = '%Y-%m-%d'
+    default_datetime_format = '%Y-%m-%d %H:%M:%S'
+
 #    def fetch(self, url, *args, **kwargs):
 #        url = self._complete_url(url)
 #        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
@@ -151,13 +154,9 @@ class SocorroMiddleware(SocorroCommon):
         """
         for key, value in params.iteritems():
             if isinstance(value, datetime.datetime):
-                # not easy! The format is too important to guess
-                raise ValueError(
-                    "Passed a datetime instance. Use .strftime() on it first!"
-                )
+                value = value.strftime(self.default_datetime_format)
             if isinstance(value, datetime.date):
-                # easy!
-                value = value.strftime('%Y-%m-%d')
+                value = value.strftime(self.default_date_format)
             if isinstance(value, unicode):
                 value = value.encode('utf-8')
             if isinstance(value, basestring):
