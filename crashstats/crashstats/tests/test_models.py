@@ -667,7 +667,5 @@ class TestModelsWithFileCaching(TestCase):
             today,
         )
         eq_(response['total'], 1)
-        eq_(response['hits'][0], {
-            'url': 'http://farm.ville',
-            'crash_count': 123
-        })
+        eq_(response['hits'][0], {'url': 'http://farm.ville',
+                                  'crash_count': 123})

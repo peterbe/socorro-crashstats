@@ -1,4 +1,3 @@
-import urllib
 from jingo import register
 
 

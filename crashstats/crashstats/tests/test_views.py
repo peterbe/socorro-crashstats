@@ -1090,7 +1090,7 @@ class TestViews(TestCase):
         eq_(response.status_code, 200)
         ok_('http://farm.ville' not in response.content)
 
-        user = User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
         assert self.client.login(username='test', password='secret')
 
         url = reverse('crashstats.report_list')
@@ -1099,4 +1099,4 @@ class TestViews(TestCase):
         # now it suddenly appears when we're logged in
         ok_('http://farm.ville' in response.content)
         # not too long...
-        ok_(really_long_url[:80-3] + '...' in response.content)
+        ok_(really_long_url[:80 - 3] + '...' in response.content)

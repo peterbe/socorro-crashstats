@@ -2,7 +2,6 @@ import csv
 import json
 import datetime
 import functools
-import json
 import math
 import isodate
 
@@ -606,7 +605,7 @@ def report_list(request):
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
-      [data['signature']]
+        [data['signature']]
     )['hits']
 
     return render(request, 'crashstats/report_list.html', data)
