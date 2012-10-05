@@ -8,5 +8,8 @@ def split(value, separator):
 
 
 @register.function
-def urlquote(value):
-    return urllib.quote(value)
+def truncatechars(str_, max_length):
+    if len(str_) < max_length:
+        return str_
+    else:
+        return '%s...' % str_[:max_length - len('...')]

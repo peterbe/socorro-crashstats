@@ -591,6 +591,19 @@ def report_list(request):
                                      report['uuid'],
                                      report['date_processed']))
 
+    # signature URLs only if you're logged in
+    data['signature_urls'] = None
+    if request.user.is_active:
+        signatureurls_api = models.SignatureURLs()
+        sigurls = signatureurls_api.get(
+            data['signature'],
+            [data['product']],
+            [data['version']],
+            start_date,
+            end_date
+        )
+        data['signature_urls'] = sigurls['hits']
+
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
       [data['signature']]
