@@ -1,3 +1,9 @@
+/* This is left intentionally even though it's not used.
+   It's because some templates use to use this massive catch-all
+   instead of being specific about which .css files from the
+   flora theme that are needed.
+*/
+
 @import "flora.css";
 @import "flora.resizable.css";
 @import "flora.slider.css";
