@@ -609,6 +609,11 @@ def report_index(request, crash_id):
             data['hang_id']
         )
 
+    data['raw_dump_urls'] = [
+        reverse('crashstats.raw_data', args=(crash_id, 'dump')),
+        reverse('crashstats.raw_data', args=(crash_id, 'json'))
+    ]
+
     return render(request, 'crashstats/report_index.html', data)
 
 
@@ -1055,3 +1060,20 @@ class BuildsRss(Feed):
 
     def item_pubdate(self, item):
         return datetime.datetime.strptime(item['date'], '%Y-%m-%d')
+
+
+def raw_data(request, crash_id, extension):
+    api = models.RawData()
+    if extension == 'json':
+        format = 'meta'
+        content_type = 'application/json'
+    elif extension == 'dump':
+        format = 'raw_crash'
+        content_type = 'application/octet-stream'
+    else:
+        raise NotImplementedError(extension)
+
+    data = api.get(crash_id, format)
+    response = http.HttpResponse(content_type=content_type)
+    response.write(data)
+    return response

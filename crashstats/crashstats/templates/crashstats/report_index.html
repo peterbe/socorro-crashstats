@@ -376,12 +376,12 @@
             <div class="code">
               {{ report.dump }}
             </div>
-	    
+
 	    {% if request.user.is_active %}
             <h3>Download the Raw Dump</h3>
               {% for url in raw_dump_urls %}
-	      <p><a href="{{ url }}">{{ url }}</a></p>
-  	      {% endfor %}
+                <p><a href="{{ url }}">{{ url }}</a></p>
+              {% endfor %}
 	    {% endif %}
           </div><!-- /rawdump -->
 

@@ -513,6 +513,18 @@ class DailyBuilds(SocorroMiddleware):
         return self.fetch(url)
 
 
+class RawData(SocorroMiddleware):
+
+    def get(self, crash_id, format):
+        params = {
+            'crash_id': crash_id,
+            'format': format,
+        }
+        self.urlencode_params(params)
+        url = '/crashes/crash/%(format)s/by/uuid/%(crash_id)s' % params
+        return self.fetch(url)
+
+
 class BugzillaAPI(SocorroCommon):
     base_url = settings.BZAPI_BASE_URL
     username = password = None
