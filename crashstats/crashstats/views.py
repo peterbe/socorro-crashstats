@@ -648,7 +648,6 @@ def report_list(request):
     data['report_list'] = api.get(signature, product_version,
                                   start_date, results_per_page,
                                   result_offset)
-
     current_query = request.GET.copy()
     if 'page' in current_query:
         del current_query['page']

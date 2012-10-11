@@ -264,6 +264,9 @@
              {% for c in comments %}
                <p class="crash_comments">{{ c[0] }}
                <p class="crash_comments"><a href="{{ url('crashstats.report_index', c[1]) }}">Submitted: {{ c[2] }}</a></p>
+	       {% if request.user.is_active %}
+	       <p class="crash_comments">Email: <a href="mailto:{{ c[3] }}">{{ c[3] }}</a></p>
+	       {% endif %}
                <hr>
              {% endfor %}
         </div>
