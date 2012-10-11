@@ -248,7 +248,7 @@ class TestViews(TestCase):
 
         def mocked_get(url, **options):
             if 'crashes/signatures' in url:
-                return Response("""
+                return Response(u"""
                    {"crashes": [
                      {
                       "count": 188,
@@ -265,7 +265,7 @@ class TestViews(TestCase):
                       "changeInPercentOfTotal": 0.011139597126354983,
                       "linux_count": 66,
                       "hang_count": 0,
-                      "signature": "FakeSignature1",
+                      "signature": "FakeSignature1 \u7684 Japanese",
                       "versions_count": 8,
                       "changeInRank": 1,
                       "plugin_count": 0,
@@ -296,7 +296,8 @@ class TestViews(TestCase):
         reader = csv.reader(StringIO(response.content))
         line1, line2 = reader
         eq_(line1[0], 'Rank')
-        eq_(line2[4], 'FakeSignature1')
+        # bytestring when exported as CSV with UTF-8 encoding
+        eq_(line2[4], 'FakeSignature1 \xe7\x9a\x84 Japanese')
 
     @mock.patch('requests.get')
     def test_daily(self, rget):
