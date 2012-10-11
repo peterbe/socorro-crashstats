@@ -137,7 +137,7 @@
 	    {% endif %}
             <tr>
               <th>User Comments</th>
-              <td></td>
+              <td>{{ report.user_comments }}</td>
             </tr>
             {% if report.app_notes %}
             <tr>
@@ -412,11 +412,14 @@
               {% if comments.total > 0 %}
               {% for comment in comments.hits %}
               <p class="crash_comments">
-                {{ comment.user_comments }}
+                {{ comment.user_comments|nl2br }}
               </p>
               <p class="crash_comments">
-                <a href="/report/index/{{ comment.uuid }}">Submitted: {{ comment.date_processed }}</a>
+                <a href="{{ url('crashstats.report_index', comment.uuid) }}">Submitted: {{ comment.date_processed }}</a>
               </p>
+              {% if request.user.is_active %}
+              <p class="crash_comments">Email: {% if comment.email %}<a href="mailto:{{ comment.email }}">{{ comment.email }}</a>{% endif %}</p>
+              {% endif %}
               <hr>
               {% endfor %}
               {% else %}
