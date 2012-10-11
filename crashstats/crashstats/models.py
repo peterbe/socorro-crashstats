@@ -329,12 +329,13 @@ class ProcessedCrash(SocorroMiddleware):
 
 class RawCrash(SocorroMiddleware):
 
-    def get(self, crash_id):
+    def get(self, crash_id, format='meta'):
         params = {
             'crash_id': crash_id,
+            'format': format,
         }
         self.urlencode_params(params)
-        url = '/crash/meta/by/uuid/%(crash_id)s' % params
+        url = '/crash/%(format)s/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
 
@@ -510,18 +511,6 @@ class DailyBuilds(SocorroMiddleware):
                    % params)
         else:
             url = ('/products/builds/product/%(product)s' % params)
-        return self.fetch(url)
-
-
-class RawData(SocorroMiddleware):
-
-    def get(self, crash_id, format):
-        params = {
-            'crash_id': crash_id,
-            'format': format,
-        }
-        self.urlencode_params(params)
-        url = '/crashes/crash/%(format)s/by/uuid/%(crash_id)s' % params
         return self.fetch(url)
 
 

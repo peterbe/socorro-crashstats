@@ -1063,7 +1063,7 @@ class BuildsRss(Feed):
 
 
 def raw_data(request, crash_id, extension):
-    api = models.RawData()
+    api = models.RawCrash()
     if extension == 'json':
         format = 'meta'
         content_type = 'application/json'
@@ -1075,5 +1075,9 @@ def raw_data(request, crash_id, extension):
 
     data = api.get(crash_id, format)
     response = http.HttpResponse(content_type=content_type)
-    response.write(data)
+
+    if extension == 'json':
+        response.write(json.dumps(data))
+    else:
+        response.write(data)
     return response
