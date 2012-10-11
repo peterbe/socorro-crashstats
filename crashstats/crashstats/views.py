@@ -697,11 +697,6 @@ def report_list(request):
         else:
             data['table'][buildid][os_name] += 1
 
-#        if report['user_comments']:
-#            data['comments'].append((report['user_comments'],
-#                                     report['uuid'],
-#                                     report['date_processed']))
-
     # signature URLs only if you're logged in
     data['signature_urls'] = None
     if request.user.is_active:
@@ -718,7 +713,6 @@ def report_list(request):
     comments_api = models.CommentsBySignature()
     data['comments'] = comments_api.get(data['signature'],
                                         start_date, end_date)
-
 
     bugs_api = models.Bugs()
     data['bug_associations'] = bugs_api.get(
