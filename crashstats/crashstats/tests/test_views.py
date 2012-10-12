@@ -1213,3 +1213,54 @@ class TestViews(TestCase):
         ok_('bob@uncle.com' in response.content)
         # not too long...
         ok_(really_long_url[:80 - 3] + '...' in response.content)
+
+    @mock.patch('requests.get')
+    def test_raw_data(self, rget):
+
+        def mocked_get(url, **options):
+            if 'crash/meta/by/uuid' in url:
+                return Response("""
+                  {"foo": "bar",
+                   "stuff": 123}
+                """)
+            if 'crash/raw_crash/by/uuid' in url:
+                return Response("""
+                  bla bla bla
+                """.strip())
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        crash_id = '176bcd6c-c2ec-4b0c-9d5f-dadea2120531'
+        json_url = reverse('crashstats.raw_data', args=(crash_id, 'json'))
+        response = self.client.get(json_url)
+        eq_(response.status_code, 403)
+
+        User.objects.create_user('test', 'test@mozilla.com', 'secret')
+        assert self.client.login(username='test', password='secret')
+        response = self.client.get(json_url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/json')
+        eq_(json.loads(response.content),
+            {"foo": "bar", "stuff": 123})
+
+        dump_url = reverse('crashstats.raw_data', args=(crash_id, 'dump'))
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 200)
+        eq_(response['Content-Type'], 'application/octet-stream')
+        ok_('bla bla bla' in response.content)
+
+        # dump files are cached.
+        # check the mock function and expect no change
+        def different_mocked_get(url, **options):
+            if 'crash/raw_crash/by/uuid' in url:
+                return Response("""
+                  SOMETHING DIFFERENT
+                """.strip())
+            raise NotImplementedError(url)
+
+        rget.side_effect = different_mocked_get
+
+        response = self.client.get(dump_url)
+        eq_(response.status_code, 200)
+        ok_('bla bla bla' in response.content)  # still. good.

@@ -1061,6 +1061,9 @@ class BuildsRss(Feed):
 
 
 def raw_data(request, crash_id, extension):
+    if not request.user.is_active:
+        return http.HttpResponseForbidden("Must be logged in")
+
     api = models.RawCrash()
     if extension == 'json':
         format = 'meta'
