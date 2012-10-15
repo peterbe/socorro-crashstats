@@ -83,7 +83,7 @@ but this is the basic command to run coverage tests on the
 
     ./manage.py test --cover-erase --with-coverage \
     --cover-package=crashstats --cover-html
-    
+
 That'll create `./cover/index.html` for your viewing pleasures.
 
 
@@ -98,9 +98,7 @@ Paste this into `.git/hooks/pre-commit`:
         echo "Aborting commit.  Fix above errors or do 'git commit --no-verify'."
         exit 1
     fi
-    
+
 Then, make the file executable:
 
     chmod +x .git/hooks/pre-commit
-    
-    
