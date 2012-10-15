@@ -85,3 +85,22 @@ but this is the basic command to run coverage tests on the
     --cover-package=crashstats --cover-html
     
 That'll create `./cover/index.html` for your viewing pleasures.
+
+
+Enable your pre-commit hook
+---------------------------
+
+Paste this into `.git/hooks/pre-commit`:
+
+    check.py | grep -v 'unable to detect undefined names'
+    if [ "$?" -ne "0" ]
+    then
+        echo "Aborting commit.  Fix above errors or do 'git commit --no-verify'."
+        exit 1
+    fi
+    
+Then, make the file executable:
+
+    chmod +x .git/hooks/pre-commit
+    
+    
