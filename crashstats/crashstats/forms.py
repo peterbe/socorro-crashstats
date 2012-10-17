@@ -134,8 +134,8 @@ class DailyFormBase(forms.Form):
     start_date = forms.DateField(required=False)
     end_date = forms.DateField(required=False)
 
-    def __init__(self, data, current_versions, platforms, *args, **kwargs):
-        super(DailyFormBase, self).__init__(data, *args, **kwargs)
+    def __init__(self, current_versions, platforms, *args, **kwargs):
+        super(DailyFormBase, self).__init__(*args, **kwargs)
         self.versions = collections.defaultdict(list)
         for each in current_versions:
             self.versions[each['product']].append(each['version'])
@@ -149,9 +149,6 @@ class DailyFormBase(forms.Form):
         self.fields['v'].choices = [
             (x, x) for sublist in self.versions.values() for x in sublist
         ] + [('', 'blank')]
-
-    def clean_p(self):
-        return self.cleaned_data['p']
 
     def clean_v(self):
         versions = [x.strip() for x in self.cleaned_data['v'] if x.strip()]
