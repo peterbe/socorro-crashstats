@@ -21,29 +21,6 @@ from . import utils
 from .decorators import check_days_parameter
 
 
-def get_search_parameters(request):
-    """Return a dictionary of parameters for the search service.
-    """
-    return {
-        'signature': request.GET.get('signature'),
-        'query': request.GET.get('query'),
-        'products': request.GET.getlist('product'),
-        'versions': request.GET.getlist('version'),
-        'platforms': request.GET.getlist('platform'),
-        'end_date': request.GET.get('date'),
-        'date_range_unit': request.GET.get('range_unit'),
-        'date_range_value': request.GET.get('range_value'),
-        'query_type': request.GET.get('query_type'),
-        'reason': request.GET.get('reason'),
-        'build_id': request.GET.get('build_id'),
-        'process_type': request.GET.get('process_type'),
-        'hang_type': request.GET.get('hang_type'),
-        'plugin_field': request.GET.get('plugin_field'),
-        'plugin_query_type': request.GET.get('plugin_query_type'),
-        'plugin_query': request.GET.get('plugin_query')
-    }
-
-
 def has_builds(product, versions):
     contains_builds = False
     prod_versions = []
