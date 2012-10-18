@@ -472,8 +472,9 @@ def daily(request):
             data_table['totals'][
                 product_version]['crashes'] += crash_info['report_count']
             data_table['totals'][product_version]['adu'] += crash_info['adu']
-            data_table['totals'][
-                product_version]['throttle'] = crash_info['throttle']
+            if 'throttle' in crash_info:
+                data_table['totals'][
+                    product_version]['throttle'] = crash_info['throttle']
             data_table['totals'][
                 product_version]['ratio'] += crash_info['crash_hadu']
 
