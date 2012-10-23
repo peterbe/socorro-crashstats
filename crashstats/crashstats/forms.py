@@ -17,9 +17,10 @@ class CarefulFieldBase(object):
     """
 
     def strptime(self, value, format):
-        if u'\x00' in value:
-            raise ValueError()
-        return datetime.datetime.strptime(value, format)
+        try:
+            return datetime.datetime.strptime(value, format)
+        except TypeError, e:
+            raise ValueError(e)
 
 
 class CarefulDateTimeField(CarefulFieldBase, forms.DateTimeField):
