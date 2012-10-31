@@ -1282,11 +1282,6 @@ def buginfo(request, signatures=None):
     bugs = form.cleaned_data['bug_ids']
     fields = form.cleaned_data['include_fields']
 
-    print "BUGS"
-    print repr(bugs)
-    print "FIELDS"
-    print repr(fields)
-
     bzapi = models.BugzillaBugInfo()
     return bzapi.get(bugs, fields)
 
