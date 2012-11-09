@@ -136,6 +136,40 @@ class TestViews(TestCase):
             ok_('Internal Server Error' in response.content)
             ok_('id="products_select"' not in response.content)
 
+    @mock.patch('requests.get')
+    def test_handler500_proxying_4xx_errors(self, rget):
+        root_urlconf = __import__(
+            settings.ROOT_URLCONF,
+            globals(),
+            locals(),
+            ['urls'],
+            -1
+        )
+        par, end = root_urlconf.handler500.rsplit('.', 1)
+        views = __import__(par, globals(), locals(), [end], -1)
+        handler500 = getattr(views, end)
+
+        fake_request = RequestFactory().request(**{'wsgi.input': None})
+        fake_request.user = {}
+        fake_request.user['is_active'] = False
+
+        try:
+            raise models.BadStatusCodeError('455 Bad Move Error')
+        except models.BadStatusCodeError:
+            # do this inside a frame that has a sys.exc_info()
+            response = handler500(fake_request)
+            eq_(response.status_code, 455)
+            ok_('Internal Server Error' not in response.content)
+            ok_('Bad Move Error' not in response.content)
+
+        try:
+            raise models.BadStatusCodeError('502 Bad Day Error')
+        except models.BadStatusCodeError:
+            # do this inside a frame that has a sys.exc_info()
+            response = handler500(fake_request)
+            eq_(response.status_code, 500)
+            ok_('Internal Server Error' in response.content)
+
     def test_handler404(self):
         url = reverse('crashstats.home', args=('Unknown',))
         response = self.client.get(url)

@@ -1,7 +1,11 @@
 {% extends "crashstats_base.html" %}
 
 {% block page_title %}
+{% if middleware_error %}
+Middleware Data Error - {{ middleware_error }}
+{% else %}
 Internal Server Error
+{% endif %}
 {% endblock %}
 
 {% block product_nav_filter %}&nbsp;{% endblock %}
@@ -10,11 +14,26 @@ Internal Server Error
 <div id="mainbody">
     <div class="panel">
         <div class="title">
-            <h2>Internal Server Error</h2>
+            {% if middleware_error %}
+                <h2>Middleware Data Error - {{ middleware_error }}</h2>
+            {% else %}
+                <h2>Internal Server Error</h2>
+            {% endif %}
         </div>
 
         <div class="body">
+            {% if middleware_error %}
+            <p>Unable to fetch the data from the middleware.<br>
+            The logs will have more details.
+            </p>
+            <p>
+            Do you remember what a
+            <a href="http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#4xx_Client_Error">{{ middleware_error }} error is</a>?
+            </p>
+            {% else %}
             <p>Something went wrong, it is not you it's me</p>
+            {% endif %}
+
         </div>
     </div>
 </div>
