@@ -121,5 +121,5 @@ SECRET_KEY = 'you must change this'
 # then set this to False
 #SESSION_COOKIE_SECURE = False
 
-To get your Sentry key, go to https://errormill.mozilla.org/
-#SENTRY_DSN =
+# To get your Sentry key, go to https://errormill.mozilla.org/
+#SENTRY_DSN = ''
