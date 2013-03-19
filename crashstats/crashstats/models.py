@@ -379,7 +379,7 @@ class TCBS(SocorroMiddleware):
             'date_range_type': date_range_type,
             'duration': duration,
             'limit': limit,
-            'os_name': os_name
+            'os_name': os_name,
         }
         self.urlencode_params(params)
 
