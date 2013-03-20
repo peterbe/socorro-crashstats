@@ -384,6 +384,8 @@ class TestModels(TestCase):
 
         def mocked_get(**options):
             assert 'crashes/signatures' in options['url']
+            # expect no os_name parameter encoded in the URL
+            assert '/os/' not in options['url']
             return Response("""
                {"crashes": [],
                 "totalPercentage": 0,
@@ -395,6 +397,28 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         r = api.get('Thunderbird', '12.0', 'plugin', today, 'report', 336)
+        eq_(r['crashes'], [])
+
+    @mock.patch('requests.get')
+    def test_tcbs_with_os_name(self, rget):
+        model = models.TCBS
+        api = model()
+
+        def mocked_get(**options):
+            assert 'crashes/signatures' in options['url']
+            assert '/os/Win95/' in options['url']
+            return Response("""
+               {"crashes": [],
+                "totalPercentage": 0,
+                "start_date": "2012-05-10",
+                "end_date": "2012-05-24",
+                "totalNumberOfCrashes": 0}
+              """)
+
+        rget.side_effect = mocked_get
+        today = datetime.datetime.utcnow()
+        r = api.get('Thunderbird', '12.0', 'plugin', today, 'report', 336,
+                    os_name='Win95')
         eq_(r['crashes'], [])
 
     @mock.patch('requests.get')

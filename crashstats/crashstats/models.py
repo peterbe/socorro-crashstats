@@ -389,7 +389,7 @@ class TCBS(SocorroMiddleware):
                'date_range_type/%(date_range_type)s/' % params)
 
         if os_name is not None:
-            url += 'os/%(os_name)s' % params
+            url += 'os/%(os_name)s/' % params
 
         return self.fetch(url)
 
