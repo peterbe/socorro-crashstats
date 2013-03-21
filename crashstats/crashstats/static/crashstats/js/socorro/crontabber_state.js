@@ -52,13 +52,13 @@ d3.json("data.json", function(data) {
      *   links: [ { source: 0, target: 1, value: 9001 } ]
      */
     var nodes = _.map(data.state, function(v, k, l) {
-        v['name'] = k;
+        v.name = k;
         return v;
     });
 
     // cache array positions
     _.each(nodes, function(e, i, l) {
-        e['pos'] = i;
+        e.pos = i;
     });
 
     // infer skip counts by recursively walking up the tree
@@ -80,7 +80,7 @@ d3.json("data.json", function(data) {
     // reverse linked lists
     var links = [];
     _.each(nodes, function(element, index, list) {
-        _.each(element['depends_on'], function (d) {
+        _.each(element.depends_on, function (d) {
             var dep = data.state[d];
             links.push({
                 source: dep.pos,
