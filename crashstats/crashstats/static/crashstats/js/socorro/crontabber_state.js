@@ -29,7 +29,7 @@ var format = d3.format(",.0f"),
         return name + " is working normally.";
     };
 
-var svg = d3.select('#chart').append('svg')
+var svg = d3.select('#crontabber-chart').append('svg')
     .attr('width', width + margin.left + margin.right)
     .attr('height', height + margin.top + margin.bottom)
   .append('g')
@@ -165,7 +165,7 @@ d3.json("data.json", function(data) {
         return;
     }
 
-    var table = d3.select('#table').append('table'),
+    var table = d3.select('#crontabber-table').append('table'),
         thead = table.append('thead'),
         tbody = table.append('tbody'),
         tableFields = [
@@ -186,7 +186,6 @@ d3.json("data.json", function(data) {
       .enter().append("tr")
         .selectAll("td")
         .data(function(d) {
-            console.log(d);
             // get only the tableFields
             var scrubbed = _.map(tableFields, function(field) {
                 return d[field];
