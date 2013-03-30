@@ -1,7 +1,7 @@
 import datetime
 
 from django import http
-from django.shortcuts import render, redirect
+#from django.shortcuts import render, redirect
 from crashstats.crashstats import models
 from crashstats.crashstats import utils
 
@@ -20,6 +20,7 @@ class MultipleStringField(forms.TypedMultipleChoiceField):
         """Nothing to do here"""
         pass
 
+
 def fancy_init(self, model, *args, **kwargs):
     self.model = model
     self.__old_init__(*args, **kwargs)
@@ -31,11 +32,11 @@ def fancy_init(self, model, *args, **kwargs):
         elif parameter['type'] is list:
             field_class = MultipleStringField
         elif parameter['type'] is datetime.date:
-             field_class = forms.DateField
+            field_class = forms.DateField
         elif parameter['type'] is datetime.datetime:
-             field_class = forms.DateTimeField
+            field_class = forms.DateTimeField
         elif parameter['type'] is int:
-             field_class = forms.IntegerField
+            field_class = forms.IntegerField
         else:
             raise NotImplementedError(parameter['type'])
         self.fields[name] = field_class(required=required)

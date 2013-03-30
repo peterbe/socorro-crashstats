@@ -376,7 +376,7 @@ class TestViews(BaseTestViews):
             'signature': 'one & two',
             'products': ['Firefox', 'Thunderbird'],
             'versions': ['11', '12'],
-            'os': ['OSX','WINDOWS'],
+            'os': ['OSX', 'WINDOWS'],
             'range_value': '100',
             'start_date': '2012-1-1',
             'end_date': '2013-1-1',
