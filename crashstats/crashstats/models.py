@@ -266,6 +266,56 @@ class SocorroMiddleware(SocorroCommon):
         else:
             return clean(input_)
 
+    @staticmethod
+    def flatten_params(params):
+        names = []
+        for each in params:
+            if isinstance(each, basestring):
+                names.append(each)
+            elif isinstance(each, dict):
+                names.append(each['name'])
+            else:
+                assert isinstance(each, (list, tuple))
+                names.append(each[0])
+        return names
+
+    @classmethod
+    def get_annotated_params(cls):
+        """return an iterator. One dict for each parameter that the
+        class takes.
+        Each dict must have the following keys:
+            * name
+            * type
+            * required
+        """
+        for required, items in ((True, getattr(cls, 'required_params', [])),
+                                (False, getattr(cls, 'possible_params', []))):
+            for item in items:
+                if isinstance(item, basestring):
+                    type_ = basestring
+                    name = item
+                    default = None
+                elif isinstance(item, dict):
+                    type_ = item['type']
+                    name = item['name']
+                    default = item.get('default', None)
+                else:
+                    assert isinstance(item, tuple)
+                    name = item[0]
+                    type_ = item[1]
+
+                    try:
+                        default = item[2]
+                    except IndexError:
+                        pass
+
+                yield {
+                    'name': name,
+                    'required': required,
+                    'type': type_,
+                    'default': default,
+                }
+
 
 class CurrentVersions(SocorroMiddleware):
 
@@ -332,20 +382,25 @@ class Platforms(SocorroMiddleware):
 class CrashesPerAdu(SocorroMiddleware):
 
     # Fetch records for active daily users.
+    required_params = [
+        'product',
+        ('versions', list),
+    ]
+
+    possible_params = [
+        ('from_date', datetime.date),
+        ('to_date', datetime.date),
+        'date_range_type',
+        'os',
+        'report_type'
+    ]
+
     def get(self, **kwargs):
-        required_params = [
-            'product',
-            'versions',
-        ]
-        possible_params = [
-            'from_date',
-            'to_date',
-            'date_range_type',
-            'os',
-            'report_type'
-        ]
         url = '/crashes/daily'
         params = {}
+
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
 
         for param in required_params + possible_params:
             if param in required_params and not kwargs.get(param):
@@ -378,56 +433,79 @@ class CrashesPerAdu(SocorroMiddleware):
 
 class TCBS(SocorroMiddleware):
 
-    def get(self, product, version, crash_type, end_date,
-            date_range_type, duration, limit=300, os_name=None):
-        params = {
-            'product': product,
-            'version': version,
-            'crash_type': crash_type,
-            'end_date': end_date.strftime('%Y-%m-%d'),
-            'date_range_type': date_range_type,
-            'duration': duration,
-            'limit': limit,
-            'os_name': os_name,
-        }
-        self.urlencode_params(params)
+    required_params = (
+        'product',
+        'version',
+    )
+    possible_params = (
+        'crash_type',
+        ('end_date', datetime.date),
+        'date_range_type',
+        ('duration', int),
+        ('limit', int),
+        'os',
+    )
 
-        url = ('/crashes/signatures/product/%(product)s/version/'
-               '%(version)s/crash_type/%(crash_type)s/end_date/%(end_date)s/'
-               'duration/%(duration)s/limit/%(limit)s/'
-               'date_range_type/%(date_range_type)s/' % params)
+    def get(self, **kwargs):
+        if not kwargs.get('limit'):
+            kwargs['limit'] = 300
 
-        if os_name is not None:
-            url += 'os/%(os_name)s/' % params
+        url = '/crashes/signatures/'
+        params = {}
 
-        return self.fetch(url)
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
+
+        for param in required_params + possible_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+            value = kwargs[param]
+            if not value:
+                continue
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += param + '/%(' + param + ')s/'
+
+        return self.fetch(url % params)
 
 
 class ReportList(SocorroMiddleware):
 
-    def get(self, **kwargs):
-        accepted_parameters = [
-            'signature',
-            'products',
-            'versions',
-            'os',
-            'start_date',
-            'end_date',
-            'build_ids',
-            'reasons',
-            'release_channels',
-            'report_process',
-            'report_type',
-            'plugin_in',
-            'plugin_search_mode',
-            'plugin_terms',
-            'result_number',
-            'result_offset'
-        ]
+    required_params = (
+        'signature',
+    )
 
-        # The signature parameter is mandatory.
-        if not kwargs.get('signature'):
-            raise TypeError("The 'signature' parameter cannot be empty")
+    possible_params = (
+        ('products', list),
+        ('versions', list),
+        ('os', list),
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
+        'build_ids',
+        'reasons',
+        'release_channels',
+        'report_process',
+        'report_type',
+        'plugin_in',
+        'plugin_search_mode',
+        'plugin_terms',
+        'result_number',
+        'result_offset'
+    )
+
+    def get(self, **kwargs):
+
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
+        for each in required_params:
+            if not kwargs.get(each):
+                raise TypeError("The '%s' parameter cannot be empty" % each)
+
+        accepted_parameters = required_params + possible_params
 
         # Those aliases are here so we can easily remove them when the
         # middleware service is updated. That will happen when we have
@@ -458,10 +536,13 @@ class ReportList(SocorroMiddleware):
 
 
 class ProcessedCrash(SocorroMiddleware):
+    required_params = (
+        'crash_id',
+    )
 
-    def get(self, crash_id):
+    def get(self, **kwargs):
         params = {
-            'crash_id': crash_id,
+            'crash_id': kwargs['crash_id'],
         }
         self.urlencode_params(params)
         url = '/crash_data/datatype/processed/uuid/%(crash_id)s' % params
@@ -470,11 +551,19 @@ class ProcessedCrash(SocorroMiddleware):
 
 class RawCrash(SocorroMiddleware):
 
-    def get(self, crash_id, format='meta'):
+    required_params = (
+        'crash_id',
+    )
+    possible_params = (
+        'format',
+    )
+
+    def get(self, **kwargs):
+        format = kwargs.get('format', 'meta')
         if format == 'raw_crash':
             format = 'raw'
         params = {
-            'crash_id': crash_id,
+            'crash_id': kwargs['crash_id'],
             'format': format,
         }
         self.urlencode_params(params)
@@ -484,28 +573,35 @@ class RawCrash(SocorroMiddleware):
 
 class CommentsBySignature(SocorroMiddleware):
 
-    def get(self, **kwargs):
-        accepted_parameters = [
-            'signature',
-            'products',
-            'versions',
-            'os',
-            'start_date',
-            'end_date',
-            'build_ids',
-            'reasons',
-            'report_process',
-            'report_type',
-            'plugin_in',
-            'plugin_search_mode',
-            'plugin_terms',
-            'result_number',
-            'result_offset'
-        ]
+    required_params = (
+        'signature',
+    )
+    possible_params = (
+        'products',
+        'versions',
+        'os',
+        'start_date',
+        'end_date',
+        'build_ids',
+        'reasons',
+        'report_process',
+        'report_type',
+        'plugin_in',
+        'plugin_search_mode',
+        'plugin_terms',
+        'result_number',
+        'result_offset'
+    )
 
-        # The signature parameter is mandatory.
-        if not kwargs.get('signature'):
-            raise TypeError("The 'signature' parameter cannot be empty")
+    def get(self, **kwargs):
+
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
+        for each in required_params:
+            if not kwargs.get(each):
+                raise TypeError("The '%s' parameter cannot be empty" % each)
+
+        accepted_parameters = required_params + possible_params
 
         # Those aliases are here so we can easily remove them when the
         # middleware service is updated. That will happen when we have
@@ -537,39 +633,48 @@ class CommentsBySignature(SocorroMiddleware):
 
 class CrashPairsByCrashId(SocorroMiddleware):
 
-    def get(self, crash_id, hang_id):
+    required_params = (
+        'crash_id',
+        'hang_id',
+    )
+
+    def get(self, **kwargs):
         params = {
-            'crash_id': crash_id,
-            'hang_id': hang_id
+            'crash_id': kwargs['crash_id'],
+            'hang_id': kwargs['hang_id'],
         }
         self.urlencode_params(params)
-        url = ('/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s'
-               % params)
+        url = (
+            '/crashes/paireduuid/uuid/%(crash_id)s/hangid/%(hang_id)s'
+            % params
+        )
         return self.fetch(url)
 
 
 class Search(SocorroMiddleware):
 
+    possible_params = (
+        'terms',
+        ('products', list),
+        ('versions', list),
+        ('os', list),
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
+        'search_mode',
+        'build_ids',
+        'reasons',
+        'release_channels',
+        'report_process',
+        'report_type',
+        'plugin_in',
+        'plugin_search_mode',
+        'plugin_terms',
+        'result_number',
+        'result_offset'
+    )
+
     def get(self, **kwargs):
-        accepted_parameters = [
-            'terms',
-            'products',
-            'versions',
-            'os',
-            'start_date',
-            'end_date',
-            'search_mode',
-            'build_ids',
-            'reasons',
-            'release_channels',
-            'report_process',
-            'report_type',
-            'plugin_in',
-            'plugin_search_mode',
-            'plugin_terms',
-            'result_number',
-            'result_offset'
-        ]
+        accepted_parameters = self.flatten_params(self.possible_params)
         # Those aliases are here so we can easily remove them when the
         # middleware service is updated. That will happen when we have
         # switched to socorro-crashstats completely.
@@ -602,46 +707,104 @@ class Search(SocorroMiddleware):
 
 class Bugs(SocorroMiddleware):
 
-    def get(self, signatures):
+    required_params = (
+        'signatures',
+    )
+
+    def get(self, **kwargs):
         url = '/bugs/'
-        if not signatures:
+        if not kwargs.get('signatures'):
             raise ValueError("'signatures' can not be empty")
-        payload = {'signatures': signatures}
+        payload = {'signatures': kwargs['signatures']}
         return self.post(url, payload)
 
 
 class SignatureTrend(SocorroMiddleware):
 
-    def get(self, product, version, signature, end_date, duration, steps=60):
-        params = {
-            'product': product,
-            'version': version,
-            'signature': self.encode_special_chars(signature),
-            'end_date': end_date.strftime('%Y-%m-%d'),
-            'duration': int(duration),
-            'steps': steps,
+    required_params = (
+        'product',
+        'version',
+        'signature',
+        ('end_date', datetime.date),
+        ('duration', int),
+    )
+
+    possible_params = (
+        ('steps', int),
+    )
+
+    def get(self, **kwargs):
+        url = '/topcrash/sig/trend/history/'
+        params = {}
+
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
+
+        # defaults
+        kwargs['steps'] = kwargs.get('steps') or 60
+        # aliases for the middleware
+        aliases = {
+            'product': 'p',
+            'version': 'v',
+            'end_date': 'end',
+            'signature': 'sig',
         }
+
+        for param in required_params + possible_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+
+            value = kwargs[param]
+            if not value:
+                continue
+            if param == 'signature':
+                value = self.encode_special_chars(value)
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += aliases.get(param, param) + '/%(' + param + ')s/'
+
         self.urlencode_params(params)
-        url = ('/topcrash/sig/trend/history/p/%(product)s/v/%(version)s/sig/'
-               '%(signature)s/end/%(end_date)s/duration/%(duration)s/steps/'
-               '%(steps)s' % params)
-        return self.fetch(url)
+        return self.fetch(url % params)
 
 
 class SignatureSummary(SocorroMiddleware):
 
-    def get(self, report_type, signature, start_date, end_date):
-        params = {
-            'report_type': report_type,
-            'signature': self.encode_special_chars(signature),
-            'start_date': start_date.strftime('%Y-%m-%d'),
-            'end_date': end_date.strftime('%Y-%m-%d'),
-        }
+    required_params = (
+        'report_type',
+        'signature',
+        ('start_date', datetime.date),
+        ('end_date', datetime.date),
+    )
+
+    def get(self, **kwargs):
+        url = '/signaturesummary/'
+        params = {}
+
+        required_params = self.flatten_params(self.required_params)
+
+        for param in required_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+
+            value = kwargs[param]
+            if not value:
+                continue
+            if param == 'signature':
+                value = self.encode_special_chars(value)
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += param + '/%(' + param + ')s/'
+
         self.urlencode_params(params)
-        url = ('/signaturesummary/report_type/%(report_type)s/signature/'
-               '%(signature)s/start_date/%(start_date)s/end_date/'
-               '%(end_date)s' % params)
-        return self.fetch(url)
+        return self.fetch(url % params)
 
 
 class Status(SocorroMiddleware):

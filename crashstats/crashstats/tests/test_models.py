@@ -400,7 +400,14 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         # test for valid arguments
-        api.get('Thunderbird', '12.0', 'plugin', today, 'report', 336)
+        api.get(
+            product='Thunderbird',
+            version='12.0',
+            crash_type='plugin',
+            end_date=today,
+            date_range_type='report',
+            limit=336
+        )
 
     @mock.patch('requests.get')
     def test_tcbs_with_os_name(self, rget):
@@ -421,8 +428,15 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         # test for valid arguments
-        api.get('Thunderbird', '12.0', 'plugin', today, 'report', 336,
-                os_name='Win95')
+        api.get(
+            product='Thunderbird',
+            version='12.0',
+            crash_type='plugin',
+            end_date=today,
+            date_range_type='report',
+            limit=336,
+            os='Win95',
+        )
 
     @mock.patch('requests.get')
     def test_report_list(self, rget):
@@ -534,7 +548,7 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        r = api.get('7c44ade2-fdeb-4d6c-830a-07d302120525')
+        r = api.get(crash_id='7c44ade2-fdeb-4d6c-830a-07d302120525')
         ok_(r['product'])
 
     @mock.patch('requests.get')
@@ -606,14 +620,14 @@ class TestModels(TestCase):
             return Response('{"hits": ["123456789"]}')
 
         rpost.side_effect = mocked_post
-        r = api.get('Pickle::ReadBytes')
+        r = api.get(signatures='Pickle::ReadBytes')
         ok_(r['hits'])
 
     def test_bugs_called_without_signatures(self):
         model = models.Bugs
         api = model()
 
-        self.assertRaises(ValueError, api.get, [])
+        self.assertRaises(ValueError, api.get)
 
     @mock.patch('requests.post')
     def test_bugs_no_caching(self, rpost):
@@ -629,7 +643,7 @@ class TestModels(TestCase):
             return Response('{"hits": ["123456789"]}')
 
         rpost.side_effect = mocked_post
-        r = api.get('Pickle::ReadBytes')
+        r = api.get(signatures='Pickle::ReadBytes')
         eq_(r['hits'], [u'123456789'])
 
         # Change the response
@@ -641,7 +655,7 @@ class TestModels(TestCase):
             return Response('{"hits": ["987654310"]}')
 
         rpost.side_effect = mocked_post_v2
-        r = api.get('Pickle::ReadBytes')
+        r = api.get(signatures='Pickle::ReadBytes')
         eq_(len(calls), 2)
         eq_(r['hits'], [u'987654310'])
 
@@ -663,8 +677,13 @@ class TestModels(TestCase):
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
-        r = api.get('Thunderbird', '12.0', 'Pickle::ReadBytes',
-                    today, 1000)
+        r = api.get(
+            product='Thunderbird',
+            version='12.0',
+            signature='Pickle::ReadBytes',
+            end_date=today,
+            duration=1000
+        )
         ok_(r['signature'])
 
     @mock.patch('requests.get')
@@ -694,7 +713,12 @@ class TestModels(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         yesterday = today - datetime.timedelta(days=10)
-        r = api.get('products', 'Pickle::ReadBytes', yesterday, today)
+        r = api.get(
+            report_type='products',
+            signature='Pickle::ReadBytes',
+            start_date=yesterday,
+            end_date=today,
+        )
         ok_(r[0]['version_string'])
 
     @mock.patch('requests.get')
@@ -810,7 +834,7 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        r = api.get('some-crash-id')
+        r = api.get(crash_id='some-crash-id')
         eq_(r['Vendor'], 'Mozilla')
 
 

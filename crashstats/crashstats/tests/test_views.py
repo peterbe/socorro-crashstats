@@ -20,11 +20,11 @@ class Response(object):
         self.status_code = status_code
 
 
-class TestViews(TestCase):
+class BaseTestViews(TestCase):
 
     @mock.patch('requests.get')
     def setUp(self, rget):
-        super(TestViews, self).setUp()
+        super(BaseTestViews, self).setUp()
 
         # checking settings.CACHES isn't as safe as `cache.__class__`
         if 'LocMemCache' not in cache.__class__.__name__:
@@ -111,8 +111,11 @@ class TestViews(TestCase):
         api.get()
 
     def tearDown(self):
-        super(TestViews, self).tearDown()
+        super(BaseTestViews, self).tearDown()
         cache.clear()
+
+
+class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_handler500(self, rget):
