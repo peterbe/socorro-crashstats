@@ -371,10 +371,20 @@ class TestModels(TestCase):
 
         today = datetime.datetime.utcnow()
         week_ago = today - datetime.timedelta(days=7)
-        response = api.get(today, week_ago, 'WaterWolf', '5.0a1')
+        response = api.get(
+            start_date=today,
+            end_date=week_ago,
+            product='WaterWolf',
+            version='5.0a1'
+        )
         ok_('crashtrends' in response)
 
-        response = api.get(today, week_ago, 'NightTrain', '5.0a1')
+        response = api.get(
+            start_date=today,
+            end_date=week_ago,
+            product='NightTrain',
+            version='5.0a1'
+        )
         for report in response['crashtrends']:
             product = report['product_name']
 
@@ -810,7 +820,7 @@ class TestModels(TestCase):
             """)
 
         rget.side_effect = mocked_get
-        r = api.get('SeaMonkey')
+        r = api.get(product='SeaMonkey')
         eq_(r[0]['product'], 'SeaMonkey')
         ok_(r[0]['date'])
         ok_(r[0]['version'])
@@ -1031,11 +1041,11 @@ class TestModelsWithFileCaching(TestCase):
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
         response = api.get(
-            'FakeSignature',
-            ['WaterWolf'],
-            ['WaterWolf:1.0'],
-            today - datetime.timedelta(days=1),
-            today,
+            signature='FakeSignature',
+            products=['WaterWolf'],
+            versions=['WaterWolf:1.0'],
+            start_date=today - datetime.timedelta(days=1),
+            end_date=today,
         )
         eq_(response['total'], 1)
         eq_(response['hits'][0], {'url': 'http://farm.ville',

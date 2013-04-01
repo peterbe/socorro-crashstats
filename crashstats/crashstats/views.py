@@ -681,7 +681,7 @@ def builds(request, product=None, versions=None):
 
     data['report'] = 'builds'
     api = models.DailyBuilds()
-    middleware_results = api.get(product, version=versions)
+    middleware_results = api.get(product=product, version=versions)
     builds = defaultdict(list)
     for build in middleware_results:
         if build['build_type'] != 'Nightly':
@@ -1035,11 +1035,11 @@ def report_list(request):
     if request.user.is_active:
         signatureurls_api = models.SignatureURLs()
         sigurls = signatureurls_api.get(
-            data['signature'],
-            [data['product']],
-            data['product_versions'],
-            start_date,
-            end_date
+            signature=data['signature'],
+            products=[data['product']],
+            versions=data['product_versions'],
+            start_date=start_date,
+            end_date=end_date
         )
         data['signature_urls'] = sigurls['hits']
 
@@ -1605,8 +1605,8 @@ def crashtrends_json(request):
     response = api.get(
         product=product,
         version=version,
-        start_date=start_date,
-        end_date=end_date
+        start_date=start_date.date(),
+        end_date=end_date.date()
     )
 
     formatted = {}
@@ -1640,7 +1640,7 @@ class BuildsRss(Feed):
 
     def items(self, data):
         api = models.DailyBuilds()
-        all_builds = api.get(data['product'], version=data['versions'])
+        all_builds = api.get(product=data['product'], version=data['versions'])
         nightly_builds = []
         for build in all_builds:
             if build['build_type'] == 'Nightly':

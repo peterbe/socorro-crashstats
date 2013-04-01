@@ -507,8 +507,10 @@ class TestViews(BaseTestViews):
     def test_crashtrends_json(self, rget):
         url = reverse('crashstats.crashtrends_json')
 
-        def mocked_get(**options):
-            if 'crashtrends/start_date' in options['url']:
+        def mocked_get(url, **options):
+            ok_('/start_date/2012-10-01/' in url)
+            ok_('/end_date/2012-10-10/' in url)
+            if 'crashtrends/' in url:
                 return Response("""
                     {
                       "crashtrends": [{

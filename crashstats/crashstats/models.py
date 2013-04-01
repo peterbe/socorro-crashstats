@@ -294,26 +294,26 @@ class SocorroMiddleware(SocorroCommon):
                 if isinstance(item, basestring):
                     type_ = basestring
                     name = item
-                    default = None
+                    #default = None
                 elif isinstance(item, dict):
                     type_ = item['type']
                     name = item['name']
-                    default = item.get('default', None)
+                    #default = item.get('default', None)
                 else:
                     assert isinstance(item, tuple)
                     name = item[0]
                     type_ = item[1]
 
-                    try:
-                        default = item[2]
-                    except IndexError:
-                        pass
+                    #try:
+                    #    default = item[2]
+                    #except IndexError:
+                    #    pass
 
                 yield {
                     'name': name,
                     'required': required,
                     'type': type_,
-                    'default': default,
+                    #'default': default,
                 }
 
 
@@ -382,18 +382,18 @@ class Platforms(SocorroMiddleware):
 class CrashesPerAdu(SocorroMiddleware):
 
     # Fetch records for active daily users.
-    required_params = [
+    required_params = (
         'product',
         ('versions', list),
-    ]
+    )
 
-    possible_params = [
+    possible_params = (
         ('from_date', datetime.date),
         ('to_date', datetime.date),
         'date_range_type',
         'os',
         'report_type'
-    ]
+    )
 
     def get(self, **kwargs):
         url = '/crashes/daily'
@@ -809,7 +809,12 @@ class SignatureSummary(SocorroMiddleware):
 
 class Status(SocorroMiddleware):
 
-    def get(self, duration=12, decode_json=True):
+    possible_params = (
+        'duration',
+    )
+
+    def get(self, decode_json=True, **kwargs):
+        duration = kwargs.get('duration') or 12
         return self.fetch(
             '/server_status/duration/%s' % duration,
             expect_json=decode_json
@@ -826,35 +831,72 @@ class CrontabberState(SocorroMiddleware):
 
 class DailyBuilds(SocorroMiddleware):
 
-    def get(self, product, version=None):
-        params = {
-            'product': product
-        }
-        if version:
-            params['version'] = version
-            url = ('/products/builds/product/%(product)s/version/%(version)s'
-                   % params)
-        else:
-            url = ('/products/builds/product/%(product)s' % params)
-        return self.fetch(url)
+    required_params = (
+        'product',
+    )
+    possible_params = (
+        'version',
+    )
+
+    def get(self, **kwargs):
+        url = '/products/builds/'
+        params = {}
+
+        required_params = self.flatten_params(self.required_params)
+        possible_params = self.flatten_params(self.possible_params)
+
+        for param in required_params + possible_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+            value = kwargs[param]
+            if not value:
+                continue
+            if param == 'signature':
+                value = self.encode_special_chars(value)
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += param + '/%(' + param + ')s/'
+
+        self.urlencode_params(params)
+        return self.fetch(url % params)
 
 
 class CrashTrends(SocorroMiddleware):
 
-    def get(self, start_date=None, end_date=None,
-            product='Firefox', version=None):
-        params = {
-            'product': product,
-            'version': version,
-            'start_date': start_date,
-            'end_date': end_date
-        }
+    required_params = (
+        'product',
+        'version',
+        ('start_date', datetime.date),
+        ('end_date', datetime.date),
+    )
+
+    def get(self, **kwargs):
+        url = '/crashtrends/'
+        params = {}
+
+        required_params = self.flatten_params(self.required_params)
+
+        for param in required_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+
+            value = kwargs[param]
+            if not value:
+                continue
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += param + '/%(' + param + ')s/'
 
         self.urlencode_params(params)
-        url = ('/crashtrends/start_date/%(start_date)s/end_date/%(end_date)s'
-               '/product/%(product)s/version/%(version)s' % params)
-
-        return self.fetch(url)
+        return self.fetch(url % params)
 
 
 class BugzillaAPI(SocorroCommon):
@@ -884,7 +926,40 @@ class BugzillaBugInfo(BugzillaAPI):
 
 class SignatureURLs(SocorroMiddleware):
 
-    def get(self, signature, products, product_versions, start_date, end_date):
+    required_params = (
+        ('products', list),
+        ('versions', list),
+        'signature',
+        ('start_date', datetime.datetime),
+        ('end_date', datetime.datetime),
+    )
+
+    def get(self, **kwargs):#signature, products, product_versions, start_date, end_date):
+        url = '/signatureurls/'
+        params = {}
+
+        required_params = self.flatten_params(self.required_params)
+
+        for param in required_params:# + possible_params:
+            if param in required_params and not kwargs.get(param):
+                raise TypeError("%r is a required parameter" % param)
+            if param not in kwargs:
+                continue
+            value = kwargs[param]
+            if not value:
+                continue
+            if param == 'signature':
+                value = self.encode_special_chars(value)
+            if isinstance(value, (list, tuple)):
+                value = '+'.join(value)
+
+            params[param] = value
+            url += param + '/%(' + param + ')s/'
+
+        self.urlencode_params(params)
+        return self.fetch(url % params)
+
+
         values_separator = '+'
         params = {
             'products': values_separator.join(products),

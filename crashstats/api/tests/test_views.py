@@ -756,3 +756,217 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump)
         eq_(len(dump), 2)
+
+    @mock.patch('requests.get')
+    def test_Status(self, rget):
+
+        def mocked_get(url, **options):
+
+            if 'server_status/' in url:
+                return Response("""
+                {
+                  "breakpad_revision": "1139",
+                  "hits": [
+                    {
+                      "date_oldest_job_queued": null,
+                      "date_recently_completed": null,
+                      "processors_count": 1,
+                      "avg_wait_sec": 0.0,
+                      "waiting_job_count": 0,
+                      "date_created": "2013-04-01T21:40:01+00:00",
+                      "id": 463859,
+                      "avg_process_sec": 0.0
+                    }
+                  ],
+                  "total": 12,
+                  "socorro_revision": "9cfa4de"
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Status',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['socorro_revision'])
+
+    @mock.patch('requests.get')
+    def test_CrontabberState(self, rget):
+
+        def mocked_get(url, **options):
+            if '/crontabber_state/' in url:
+                return Response("""
+                {
+                  "state": {
+                    "automatic-emails": {
+                      "next_run": "2013-04-01 22:20:01.736562",
+                      "first_run": "2013-03-15 16:25:01.411345",
+                      "depends_on": [],
+                      "last_run": "2013-04-01 21:20:01.736562",
+                      "last_success": "2013-04-01 20:25:01.411369",
+                      "error_count": 0,
+                      "last_error": {}
+                    },
+                    "ftpscraper": {
+                      "next_run": "2013-04-01 22:20:09.909384",
+                      "first_run": "2013-03-07 07:05:51.650177",
+                      "depends_on": [],
+                      "last_run": "2013-04-01 21:20:09.909384",
+                      "last_success": "2013-04-01 21:05:51.650191",
+                      "error_count": 0,
+                      "last_error": {}
+                    }
+                  },
+                  "last_updated": "2013-04-01T21:45:02+00:00"
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CrontabberState',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['state'])
+        ok_(dump['last_updated'])
+
+    @mock.patch('requests.get')
+    def test_DailyBuilds(self, rget):
+        def mocked_get(url, **options):
+            if '/products/builds/' in url:
+                return Response("""
+                    [
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000001,
+                        "beta_number": null,
+                        "platform": "Mac OS X",
+                        "version": "19.0",
+                        "date": "2012-06-25",
+                        "build_type": "Nightly"
+                      },
+                      {
+                        "product": "Firefox",
+                        "repository": "dev",
+                        "buildid": 20120625000003,
+                        "beta_number": null,
+                        "platform": "BeOS",
+                        "version": "5.0a1",
+                        "date": "2012-06-25",
+                        "build_type": "Beta"
+                      }
+                    ]
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('DailyBuilds',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['product'])
+
+        response = self.client.get(url, {
+            'product': 'Firefox',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump)
+        ok_(dump[0]['buildid'])
+
+    @mock.patch('requests.get')
+    def test_CrashTrends(self, rget):
+        def mocked_get(url, **options):
+            if '/crashtrends/' in url:
+                ok_('/product/WaterWolf/' in url)
+                ok_('/version/5.0/' in url)
+                ok_('/start_date/2012-01-01/' in url)
+                ok_('/end_date/2013-01-01/' in url)
+                return Response("""
+                {
+                  "hits": [
+                    {
+                        "sort": "1",
+                        "default_version": "5.0a1",
+                        "release_name": "waterwolf",
+                        "rapid_release_version": "5.0",
+                        "product_name": "WaterWolf"
+                    }],
+                    "total": "1"
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('CrashTrends',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['product'])
+        ok_(dump['errors']['version'])
+        ok_(dump['errors']['start_date'])
+        ok_(dump['errors']['end_date'])
+
+        response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '5.0',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['total'])
+
+    @mock.patch('requests.get')
+    def test_SignatureURLs(self, rget):
+        def mocked_get(url, **options):
+            if '/signatureurls/' in url:
+                ok_('/products/WaterWolf%2BNightTrain/' in url)
+                ok_('/start_date/2012-01-01T10%3A00%3A00/' in url)
+                ok_('/end_date/2013-01-01T10%3A00%3A00/' in url)
+                return Response("""{
+                    "hits": [
+                        {"url": "http://farm.ville", "crash_count":123},
+                        {"url": "http://other.crap", "crash_count": 1}
+                    ],
+                    "total": 2
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('SignatureURLs',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['products'])
+        ok_(dump['errors']['versions'])
+        ok_(dump['errors']['signature'])
+        ok_(dump['errors']['start_date'])
+        ok_(dump['errors']['end_date'])
+
+        response = self.client.get(url, {
+            'products': ['WaterWolf', 'NightTrain'],
+            'versions': ['WaterWolf:14.0', 'NightTrain:15.0'],
+            'start_date': '2012-1-1 10:00:0',
+            'end_date': '2013-1-1 10:00:0',
+            'signature': 'one & two',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['hits'])
+        ok_(dump['total'])

@@ -18,7 +18,8 @@ class MultipleStringField(forms.TypedMultipleChoiceField):
 
     def validate(self, value):
         """Nothing to do here"""
-        pass
+        if self.required and not value:
+            raise forms.ValidationError(self.error_messages['required'])
 
 
 def fancy_init(self, model, *args, **kwargs):
