@@ -1,10 +1,7 @@
 import re
-from pprint import pprint
-import datetime
 import json
 
 from django.core.urlresolvers import reverse
-from django.test import TestCase
 
 import mock
 from nose.tools import eq_, ok_

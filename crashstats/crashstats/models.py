@@ -934,13 +934,13 @@ class SignatureURLs(SocorroMiddleware):
         ('end_date', datetime.datetime),
     )
 
-    def get(self, **kwargs):#signature, products, product_versions, start_date, end_date):
+    def get(self, **kwargs):
         url = '/signatureurls/'
         params = {}
 
         required_params = self.flatten_params(self.required_params)
 
-        for param in required_params:# + possible_params:
+        for param in required_params:
             if param in required_params and not kwargs.get(param):
                 raise TypeError("%r is a required parameter" % param)
             if param not in kwargs:
@@ -958,18 +958,3 @@ class SignatureURLs(SocorroMiddleware):
 
         self.urlencode_params(params)
         return self.fetch(url % params)
-
-
-        values_separator = '+'
-        params = {
-            'products': values_separator.join(products),
-            'versions': values_separator.join(product_versions),
-            'signature': self.encode_special_chars(signature),
-            'start_date': start_date,
-            'end_date': end_date,
-        }
-        self.urlencode_params(params)
-        url = ('/signatureurls/signature/%(signature)s/'
-               'start_date/%(start_date)s/end_date/%(end_date)s/'
-               'products/%(products)s/versions/%(versions)s/' % params)
-        return self.fetch(url)
