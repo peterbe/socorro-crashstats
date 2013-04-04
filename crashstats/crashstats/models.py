@@ -340,26 +340,18 @@ class SocorroMiddleware(SocorroCommon):
                 if isinstance(item, basestring):
                     type_ = basestring
                     name = item
-                    #default = None
                 elif isinstance(item, dict):
                     type_ = item['type']
                     name = item['name']
-                    #default = item.get('default', None)
                 else:
                     assert isinstance(item, tuple)
                     name = item[0]
                     type_ = item[1]
 
-                    #try:
-                    #    default = item[2]
-                    #except IndexError:
-                    #    pass
-
                 yield {
                     'name': name,
                     'required': required,
                     'type': type_,
-                    #'default': default,
                 }
 
 
