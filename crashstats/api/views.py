@@ -22,24 +22,25 @@ class MultipleStringField(forms.TypedMultipleChoiceField):
             raise forms.ValidationError(self.error_messages['required'])
 
 
+TYPE_MAP = {
+    basestring: forms.CharField,
+    list: MultipleStringField,
+    datetime.date: forms.DateField,
+    datetime.datetime: forms.DateTimeField,
+    int: forms.IntegerField,
+}
+
+
 def fancy_init(self, model, *args, **kwargs):
     self.model = model
     self.__old_init__(*args, **kwargs)
     for parameter in model.get_annotated_params():
         required = parameter['required']
         name = parameter['name']
-        if parameter['type'] is basestring:
-            field_class = forms.CharField
-        elif parameter['type'] is list:
-            field_class = MultipleStringField
-        elif parameter['type'] is datetime.date:
-            field_class = forms.DateField
-        elif parameter['type'] is datetime.datetime:
-            field_class = forms.DateTimeField
-        elif parameter['type'] is int:
-            field_class = forms.IntegerField
-        else:
+
+        if parameter['type'] not in TYPE_MAP:
             raise NotImplementedError(parameter['type'])
+        field_class = TYPE_MAP[parameter['type']]
         self.fields[name] = field_class(required=required)
 
 
