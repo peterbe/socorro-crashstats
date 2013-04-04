@@ -41,7 +41,7 @@ def has_builds(product, versions):
             versions = product + combinator + versions
 
         api = models.CurrentProducts()
-        products = api.get(versions)
+        products = api.get(versions=versions)
 
         for product in products['hits']:
             if product['has_builds']:

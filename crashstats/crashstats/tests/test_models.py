@@ -41,8 +41,8 @@ class TestModels(TestCase):
             assert 'search/signatures' in options['url']
             ok_('for/sig%20with%20%252F%20and%20%252B%20and%20%26'
                 in options['url'])
-            ok_('products/WaterWolf+NightTrain' in options['url'])
-            ok_('WaterWolf%3A11.1+NightTrain%3A42.0a1' in options['url'])
+            ok_('products/WaterWolf%2BNightTrain' in options['url'])
+            ok_('WaterWolf%3A11.1%2BNightTrain%3A42.0a1' in options['url'])
             ok_('build_ids/1234567890' in options['url'])
             ok_('from/2000-01-01T01%3A01%3A00' in options['url'])
             # Test that both null and newline characters are removed
@@ -190,7 +190,7 @@ class TestModels(TestCase):
         info = api.get()
         eq_(info['hits'][0]['product_name'], 'NightTrain')
 
-        info = api.get('WaterWolf:2.1')
+        info = api.get(versions='WaterWolf:2.1')
         ok_('has_builds' in info['hits'][0])
 
     @mock.patch('requests.get')
@@ -198,10 +198,9 @@ class TestModels(TestCase):
         model = models.CrashesPerAdu
         api = model()
 
-        def mocked_get(**options):
-            assert 'crashes/daily' in options['url']
-
-            if 'date_range_type/report/os/Windows' in options['url']:
+        def mocked_get(url, **options):
+            assert 'crashes/daily' in url
+            if 'date_range_type/report/os/Windows' in url:
                 return Response("""
                     {
                       "hits": {
@@ -219,7 +218,7 @@ class TestModels(TestCase):
                       }
                     }
                     """)
-            elif 'separated_by/os/os/Linux' in options['url']:
+            elif 'separated_by/os/' in url and 'os/Linux' in url:
                 return Response("""
                     {
                       "hits": {
@@ -238,7 +237,7 @@ class TestModels(TestCase):
                       }
                     }
                     """)
-            if 'date_range_type/build' in options['url']:
+            elif 'date_range_type/build' in url:
                 return Response("""
                     {
                       "hits": {
@@ -255,7 +254,7 @@ class TestModels(TestCase):
                       }
                     }
                     """)
-            raise NotImplementedError(options['url'])
+            raise NotImplementedError(url)
 
         rget.side_effect = mocked_get
         today = datetime.datetime.utcnow()
@@ -530,9 +529,9 @@ class TestModels(TestCase):
         model = models.ProcessedCrash
         api = model()
 
-        def mocked_get(**options):
-            assert 'crash_data/datatype/processed' in options['url'],\
-                   options['url']
+        def mocked_get(url, **options):
+            assert '/crash_data/' in url
+            ok_('/datatype/processed/' in url)
             return Response("""
             {
               "product": "Firefox",
@@ -830,8 +829,9 @@ class TestModels(TestCase):
         model = models.RawCrash
         api = model()
 
-        def mocked_get(**options):
-            assert 'crash_data/datatype/meta' in options['url']
+        def mocked_get(url, **options):
+            assert '/crash_data/' in url
+            ok_('/datatype/meta' in url)
             return Response("""
                 {
                   "InstallTime": "1339289895",
@@ -963,10 +963,10 @@ class TestModelsWithFileCaching(TestCase):
         # this test is all about what's going on inside the mocked get function
         # because we're interested in how the URL to the middleware is
         # constructed
-        def mocked_get(**options):
-            assert 'report/list/' in options['url']
-            signature_bit = options['url'].split('/signature/')[1]
-            signature_bit = signature_bit.split('/versions/Fennec/')[0]
+        def mocked_get(url, **options):
+            assert 'report/list/' in url
+            signature_bit = url.split('/signature/')[1]
+            signature_bit = signature_bit.split('/products/Fennec/')[0]
             ok_('<script>' not in signature_bit)
             ok_(' ' not in signature_bit, 'space still in there')
             ok_('@' not in signature_bit, '@ still in there')

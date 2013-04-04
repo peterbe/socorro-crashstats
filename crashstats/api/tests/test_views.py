@@ -342,11 +342,11 @@ class TestViews(BaseTestViews):
 
         def mocked_get(url, **options):
             if 'report/list/' in url:
-                ok_('products/Firefox+Thunderbird/' in url)
-                ok_('versions/11+12/' in url)
+                ok_('products/Firefox%2BThunderbird/' in url)
+                ok_('versions/11%2B12/' in url)
                 ok_('build_ids/XYZ/' in url)
                 ok_('signature/one%20%26%20two/' in url)
-                ok_('os/OSX+WINDOWS/' in url)
+                ok_('os/OSX%2BWINDOWS/' in url)
                 ok_('from/2012-01-01T00%3A00%3A00' in url)
                 ok_('to/2013-01-01T00%3A00%3A00' in url)
                 return Response("""
@@ -395,7 +395,8 @@ class TestViews(BaseTestViews):
         ok_(dump['errors']['crash_id'])
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            assert '/crash_data/' in url
+            if '/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -453,7 +454,7 @@ class TestViews(BaseTestViews):
         raw_data = 'Bla bla bla'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/raw/uuid' in url:
+            if '/datatype/raw' in url:
                 return Response(raw_data)
             raise NotImplementedError(url)
 
@@ -536,9 +537,9 @@ class TestViews(BaseTestViews):
             assert 'search/signatures' in url
             if 'products/Firefox' in url:
                 ok_('signatures/for/ABC123' in url)
-                ok_('products/Firefox+Thunderbird' in url)
-                ok_('versions/19.0+18.0' in url)
-                ok_('os/OSX+Win95/' in url)
+                ok_('products/Firefox%2BThunderbird' in url)
+                ok_('versions/19.0%2B18.0' in url)
+                ok_('os/OSX%2BWin95/' in url)
 
                 return Response("""{
                     "hits": [

@@ -1770,7 +1770,7 @@ class TestViews(BaseTestViews):
         email1 = "some@otheremailaddress.com"
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/meta' in url:
+            if '/crash_data/' in url and '/datatype/meta/' in url:
                 return Response("""
                 {
                   "InstallTime": "1339289895",
@@ -1797,7 +1797,7 @@ class TestViews(BaseTestViews):
                 }
               """ % (comment0, email1))
 
-            if 'crash_data/datatype/processed' in url:
+            if '/crash_data/' in url and '/datatype/processed' in url:
                 return Response("""
                 {
                   "client_crash_date": "2012-06-11T06:08:45",
@@ -1868,7 +1868,7 @@ class TestViews(BaseTestViews):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(404)
 
             raise NotImplementedError(url)
@@ -1886,7 +1886,7 @@ class TestViews(BaseTestViews):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -1904,7 +1904,7 @@ class TestViews(BaseTestViews):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(410)
 
             raise NotImplementedError(url)
@@ -1922,7 +1922,7 @@ class TestViews(BaseTestViews):
         crash_id = '11cb72f5-eb28-41e1-a8e4-849982120611'
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/processed' in url:
+            if '/datatype/processed/' in url:
                 raise models.BadStatusCodeError(408)
 
             raise NotImplementedError(url)
@@ -2221,12 +2221,13 @@ class TestViews(BaseTestViews):
     def test_raw_data(self, rget):
 
         def mocked_get(url, **options):
-            if 'crash_data/datatype/meta/uuid' in url:
+            assert '/crash_data/' in url
+            if 'datatype/meta/' in url:
                 return Response("""
                   {"foo": "bar",
                    "stuff": 123}
                 """)
-            if 'crash_data/datatype/raw/uuid' in url:
+            if '/datatype/raw/' in url:
                 return Response("""
                   bla bla bla
                 """.strip())
