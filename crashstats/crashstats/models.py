@@ -176,7 +176,8 @@ class SocorroMiddleware(SocorroCommon):
         `self.required_params` and `self.possible_params` and construct
         a URL using only a known prefix.
         ALl classes that don't need to do any particular hacks, just need
-        to define a `URL_PREFIX` and (`required_params` and/or `possible_params`)
+        to define a `URL_PREFIX` and (`required_params` and/or
+        `possible_params`)
         """
         url = self.URL_PREFIX
         assert url.startswith('/'), 'URL_PREFIX must start with a /'
@@ -192,7 +193,6 @@ class SocorroMiddleware(SocorroCommon):
 
         defaults = getattr(self, 'defaults', {})
         aliases = getattr(self, 'aliases', {})
-
 
         for key, value in defaults.items():
             kwargs[key] = kwargs.get(key) or value
