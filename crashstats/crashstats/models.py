@@ -20,6 +20,10 @@ class BadStatusCodeError(Exception):  # XXX poor name
     pass
 
 
+class RequiredParameterError(Exception):
+    pass
+
+
 def _clean_path(path):
     """return a cleaned up version of the path appropriate for saving
     as a file directory.
@@ -199,10 +203,8 @@ class SocorroMiddleware(SocorroCommon):
 
         for param in required_params + possible_params:
             if param in required_params and not kwargs.get(param):
-                raise TypeError("%r is a required parameter" % param)
-            if param not in kwargs:
-                continue
-            value = kwargs[param]
+                raise RequiredParameterError(param)
+            value = kwargs.get(param)
             if not value:
                 continue
             if param in ('signature', 'reasons', 'terms'):  # XXX factor out
@@ -315,14 +317,14 @@ class SocorroMiddleware(SocorroCommon):
     @staticmethod
     def flatten_params(params):
         names = []
-        for each in params:
-            if isinstance(each, basestring):
-                names.append(each)
-            elif isinstance(each, dict):
-                names.append(each['name'])
+        for param in params:
+            if isinstance(param, basestring):
+                names.append(param)
+            elif isinstance(param, dict):
+                names.append(param['name'])
             else:
-                assert isinstance(each, (list, tuple))
-                names.append(each[0])
+                assert isinstance(param, (list, tuple))
+                names.append(param[0])
         return names
 
     @classmethod

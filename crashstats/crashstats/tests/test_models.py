@@ -472,7 +472,7 @@ class TestModels(TestCase):
 
         # Missing signature param
         self.assertRaises(
-            TypeError,
+            models.RequiredParameterError,
             api.get,
             products='Fennec',
             start_day=today,
