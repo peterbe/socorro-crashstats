@@ -158,9 +158,6 @@ class SocorroCommon(object):
 
 
 class SocorroMiddleware(SocorroCommon):
-    """
-    Never show this docstring
-    """
 
     base_url = settings.MWARE_BASE_URL
     http_host = settings.MWARE_HTTP_HOST
@@ -365,15 +362,6 @@ class SocorroMiddleware(SocorroCommon):
 
 
 class CurrentVersions(SocorroMiddleware):
-    """This is a sample doc string for this class. I am going to make a list:
-
-        * item1
-        * item 2
-
-    Also, this is like to be indented a big.
-
-    This is the third and last line.
-    """
 
     def get(self):
         products = CurrentProducts().get()['products']
