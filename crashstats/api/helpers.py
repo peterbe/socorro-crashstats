@@ -1,3 +1,4 @@
+import urllib
 import warnings
 import datetime
 from jingo import register
@@ -37,7 +38,7 @@ def make_test_input(parameter, defaults):
     if parameter['type'] is not basestring:
         classes.append('validate-%s' % parameter['type'].__name__)
     if defaults.get(parameter['name']):
-        data['value'] = defaults.get(parameter['name'])
+        data['value'] = urllib.quote(unicode(defaults.get(parameter['name'])))
     else:
         data['value'] = ''
 
