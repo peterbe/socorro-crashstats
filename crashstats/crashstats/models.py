@@ -514,7 +514,7 @@ class ProcessedCrash(SocorroMiddleware):
         'format',
     )
     defaults = {
-        'format': 'processed " >',
+        'format': 'processed',
     }
     aliases = {
         'crash_id': 'uuid',
