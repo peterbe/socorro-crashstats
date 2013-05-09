@@ -47,7 +47,7 @@ class BaseTestViews(TestCase):
     def setUp(self, rget):
         super(BaseTestViews, self).setUp()
 
-        # checking settings.CACHES isn't as safe as `Cache.__class__`
+        # checking settings.CACHES isn't as safe as `cache.__class__`
         if 'LocMemCache' not in cache.__class__.__name__:
             raise ImproperlyConfigured(
                 'The tests requires that you use LocMemCache when running'
