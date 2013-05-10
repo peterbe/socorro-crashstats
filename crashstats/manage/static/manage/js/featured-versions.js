@@ -12,7 +12,7 @@
                 alert("No versions selected for " + product);
             }
         });
-        return !!no_empty;
+        return no_empty;
     }
 
     $(document).ready(function() {

@@ -1,6 +1,5 @@
 import datetime
 import functools
-from collections import defaultdict
 
 from django.contrib import messages
 from django.views.decorators.http import require_POST
@@ -44,33 +43,24 @@ def featured_versions(request):
     products = products_api.get()
 
     data['products'] = products['products']  # yuck!
-
-    releases = products['hits']
-    _all_products = defaultdict(list)
-    for product_name in data['products']:
-        for release in releases[product_name]:
-            _all_products[product_name].append(release)
-
-    data['versions'] = {}
+    data['releases'] = {}
     now = datetime.date.today()
-    for product in _all_products:
-        data['versions'][product] = []
-        versions = _all_products[product]
-
-        for version in versions:
+    for product_name in data['products']:
+        data['releases'][product_name] = []
+        for release in products['hits'][product_name]:
             start_date = datetime.datetime.strptime(
-                version['start_date'],
+                release['start_date'],
                 '%Y-%m-%d'
             ).date()
             if start_date > now:
                 continue
             end_date = datetime.datetime.strptime(
-                version['end_date'],
+                release['end_date'],
                 '%Y-%m-%d'
             ).date()
             if end_date < now:
                 continue
-            data['versions'][product].append(version)
+            data['releases'][product_name].append(release)
 
     return render(request, 'manage/featured_versions.html', data)
 
@@ -90,7 +80,8 @@ def update_featured_versions(request):
     if featured_api.put(**data):
         messages.success(
             request,
-            'Featured versions successfully updated.'
+            'Featured versions successfully updated. '
+            'Cache might take some time to update.'
         )
 
     url = reverse('manage:featured_versions')

@@ -176,7 +176,13 @@ class SocorroMiddleware(SocorroCommon):
 #        url = self._complete_url(url)
 #        return super(SocorroMiddleware, self).fetch(url, *args, **kwargs)
 
-    def post(self, url, payload, method='post'):
+    def post(self, url, payload):
+        return self._post(url, payload)
+
+    def put(self, url, payload):
+        return self._post(url, payload, method='put')
+
+    def _post(self, url, payload, method='post'):
         url = self._complete_url(url)
         headers = {'Host': self.http_host}
         # set dont_cache=True here because the request depends on the payload
@@ -407,7 +413,7 @@ class ReleasesFeatured(SocorroMiddleware):
             if isinstance(value, list):
                 value = ','.join(value)
             payload[key] = value
-        return self.post(self.URL_PREFIX, payload, method='put')
+        return super(ReleasesFeatured, self).put(self.URL_PREFIX, payload)
 
 
 class ProductsVersions(CurrentVersions):
