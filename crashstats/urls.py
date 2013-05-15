@@ -1,6 +1,5 @@
-import os
 from django.conf import settings
-from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls.defaults import patterns, include
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from .crashstats import urls
@@ -36,8 +35,6 @@ urlpatterns = patterns(
     (r'^api/', include('crashstats.api.urls', namespace='api')),
     # if we ever use the Django admin we might want to change this URL
     (r'^admin/', include('crashstats.manage.urls', namespace='manage')),
-    url(r'^(?P<path>favicon\.ico)$', 'django.views.static.serve',
-        {'document_root': os.path.join(settings.STATIC_ROOT, 'img')}),
 )
 
 ## In DEBUG mode, serve media files through Django.

@@ -41,6 +41,14 @@ class RobotsTestViews(TestCase):
         ok_('Disallow: /' in response.content)
 
 
+class FaviconTestViews(TestCase):
+
+    def test_favicon(self):
+        response = self.client.get('/favicon.ico')
+        eq_(response.status_code, 200)
+        ok_('image/x-icon' in response['Content-Type'])
+
+
 class BaseTestViews(TestCase):
 
     @mock.patch('requests.get')
@@ -137,11 +145,6 @@ class BaseTestViews(TestCase):
 
 
 class TestViews(BaseTestViews):
-
-    def test_favicon(self):
-        response = self.client.get('/favicon.ico')
-        eq_(response.status_code, 200)
-        ok_('image/x-icon' in response['Content-Type'])
 
     @mock.patch('requests.get')
     def test_handler500(self, rget):
