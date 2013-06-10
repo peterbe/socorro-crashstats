@@ -1058,6 +1058,12 @@ class Correlations(SocorroMiddleware):
         'platform',
     )
 
+    API_WHITELIST = (
+        'count',
+        'load',
+        'reason',
+    )
+
 
 class CorrelationsSignatures(SocorroMiddleware):
 
@@ -1070,6 +1076,11 @@ class CorrelationsSignatures(SocorroMiddleware):
     )
     possible_params = (
         ('platforms', list),
+    )
+
+    API_WHITELIST = (
+        'hits',
+        'total',
     )
 
 
