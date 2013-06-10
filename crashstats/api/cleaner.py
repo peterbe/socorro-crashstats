@@ -83,7 +83,6 @@ class Cleaner(object):
             scrubber.scrub_dict(
                 data,
                 clean_fields=self.clean_scrub,
-                in_place=True
             )
 
     def _scrub_list(self, sequence, whitelist):
