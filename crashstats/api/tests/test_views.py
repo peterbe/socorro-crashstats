@@ -551,30 +551,9 @@ class TestViews(BaseTestViews):
     @mock.patch('requests.get')
     def test_RawCrash(self, rget):
         url = reverse('api:model_wrapper', args=('RawCrash',))
-        # XXX
-        # Perhaps this whole URL should just 404 since it's potentially
-        # going to return lots of sensitive data.
-        # /XXX
         response = self.client.get(url)
-        eq_(response.status_code, 200)
-        dump = json.loads(response.content)
-        ok_(dump['errors']['crash_id'])
-
-        raw_data = 'Bla bla bla'
-
-        def mocked_get(url, **options):
-            if '/datatype/raw' in url:
-                return Response(raw_data)
-            raise NotImplementedError(url)
-
-        rget.side_effect = mocked_get
-
-        response = self.client.get(url, {
-            'crash_id': '11cb72f5-eb28-41e1-a8e4-849982120611',
-            'format': 'raw_crash',
-        })
-        eq_(response.status_code, 200)
-        eq_(response.content, '"%s"' % raw_data)  # XXX is this right Adrian?
+        # blacklisted model
+        eq_(response.status_code, 404)
 
     @mock.patch('requests.get')
     def test_CommentsBySignature(self, rget):
@@ -1000,7 +979,7 @@ class TestViews(BaseTestViews):
                 ok_('/end_date/2013-01-01/' in url)
                 return Response("""
                 {
-                  "hits": [
+                  "crashtrends": [
                     {
                         "sort": "1",
                         "default_version": "5.0a1",
@@ -1033,7 +1012,7 @@ class TestViews(BaseTestViews):
         })
         eq_(response.status_code, 200)
         dump = json.loads(response.content)
-        ok_(dump['hits'])
+        ok_(dump['crashtrends'])
         ok_(dump['total'])
 
     @mock.patch('requests.get')
@@ -1109,3 +1088,53 @@ class TestViews(BaseTestViews):
         # forth attempt
         response = self.client.get(url)
         eq_(response.status_code, 424)
+
+    @mock.patch('requests.get')
+    def test_Correlations(self, rget):
+
+        def mocked_get(url, **options):
+            assert 0, url
+            if '/crashtrends/' in url:
+                ok_('/product/WaterWolf/' in url)
+                ok_('/version/5.0/' in url)
+                ok_('/start_date/2012-01-01/' in url)
+                ok_('/end_date/2013-01-01/' in url)
+                return Response("""
+                {
+                  "crashtrends": [
+                    {
+                        "sort": "1",
+                        "default_version": "5.0a1",
+                        "release_name": "waterwolf",
+                        "rapid_release_version": "5.0",
+                        "product_name": "WaterWolf"
+                    }],
+                    "total": "1"
+                }
+                """)
+
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('Correlations',))
+        response = self.client.get(url)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        print dump
+        return
+        ok_(dump['errors']['product'])
+        ok_(dump['errors']['version'])
+        ok_(dump['errors']['start_date'])
+        ok_(dump['errors']['end_date'])
+
+        response = self.client.get(url, {
+            'product': 'WaterWolf',
+            'version': '5.0',
+            'start_date': '2012-1-1',
+            'end_date': '2013-1-1',
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['crashtrends'])
+        ok_(dump['total'])
