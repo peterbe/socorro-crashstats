@@ -693,8 +693,8 @@ class ProcessedCrash(SocorroMiddleware):
     )
 
     API_CLEAN_SCRUB = (
-        ('user_comments', scrubber.EMAIL, 'EMAILREMOVED'),
-        ('user_comments', scrubber.URL, 'URLREMOVED'),
+        ('user_comments', scrubber.EMAIL),
+        ('user_comments', scrubber.URL),
     )
 
 
