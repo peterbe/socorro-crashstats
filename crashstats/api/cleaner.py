@@ -22,7 +22,7 @@ class Cleaner(object):
     A more complex example is when the keys in dicts aren't predictable:
 
         >>> data = {"Firefox": [{"foo": 1, "bar": 2}, {"foo": 3, "bar": 4}],
-        >>> ...     "TB": [{"foo": 5, "bar": 6}, {"foo": 7, "bar": 8}]}
+        ...         "TB": [{"foo": 5, "bar": 6}, {"foo": 7, "bar": 8}]}
         >>> c = Cleaner({Cleaner.ANY: ('foo',)})
         >>> c.start(data)
         >>> print data
