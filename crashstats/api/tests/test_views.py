@@ -262,6 +262,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['products'])
+        ok_(dump['total'])
 
     @mock.patch('requests.get')
     def test_ProductVersions(self, rget):
@@ -271,6 +272,7 @@ class TestViews(BaseTestViews):
         dump = json.loads(response.content)
         ok_(dump['hits'])
         ok_(dump['products'])
+        ok_(dump['total'])
 
     @mock.patch('requests.get')
     def test_Platforms(self, rget):
