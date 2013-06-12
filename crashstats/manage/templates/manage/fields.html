@@ -1,6 +1,6 @@
 {% extends "manage/base.html" %}
 
-{% block page_title %}Fields - {{ super() }}{% endblock %}
+{% block page_title %}{{ super() }} - Fields{% endblock %}
 
 {% block site_js %}
     {{ super() }}
@@ -18,7 +18,9 @@
   </style>
 {% endblock %}
 
-    {% block mainbody %}
+{% block admin_title %}{{ super() }} - Fields{% endblock %}
+
+{% block mainbody %}
 
     <div class="panel">
       <div class="body notitle">
@@ -49,4 +51,4 @@
       </div>
     </div>
 
-    {% endblock %}
+{% endblock %}
