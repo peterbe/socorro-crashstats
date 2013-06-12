@@ -1,6 +1,7 @@
 import datetime
 import functools
 
+from django import http
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from django.core.urlresolvers import reverse
@@ -8,8 +9,10 @@ from django.shortcuts import render, redirect
 
 from crashstats.crashstats.models import (
     CurrentProducts,
-    ReleasesFeatured
+    ReleasesFeatured,
+    Field
 )
+from crashstats.crashstats.utils import json_view
 
 
 def admin_required(view_func):
@@ -86,3 +89,20 @@ def update_featured_versions(request):
 
     url = reverse('manage:featured_versions')
     return redirect(url)
+
+
+@admin_required
+def fields(request):
+    data = {}
+    return render(request, 'manage/fields.html', data)
+
+
+@admin_required
+@json_view
+def field_lookup(request):
+    name = request.REQUEST.get('name').strip()
+    if not name:
+        return http.HttpResponseBadRequest("Missing 'name'")
+
+    api = Field()
+    return api.get(name=name)

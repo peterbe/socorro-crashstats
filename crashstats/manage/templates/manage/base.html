@@ -1,0 +1,20 @@
+{% extends "crashstats_base.html" %}
+
+{% block page_title %}Admin{% endblock %}
+
+{% block product_nav_filter %}&nbsp;{% endblock %}
+
+{% block content %}
+<div id="mainbody">
+    <div class="page-heading">
+        <h2>{% block admin_title %}Admin{% endblock %}</h2>
+        <ul class="options">
+            <li><a href="{{ url('manage:featured_versions') }}">Featured Versions</a></li>
+            <li><a href="{{ url('manage:fields') }}">Fields</a></li>
+        </ul>
+    </div>
+    {% block mainbody %}
+    {% endblock %}
+
+</div>
+{% endblock %}
