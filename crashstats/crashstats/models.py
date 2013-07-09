@@ -619,7 +619,6 @@ class ReportList(SocorroMiddleware):
             'os_name',
             'uuid',
             'hangid',
-            'url',
             'last_crash',
             'date_processed',
             'cpu_name',
