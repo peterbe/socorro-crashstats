@@ -552,10 +552,72 @@ class TestViews(BaseTestViews):
 
     @mock.patch('requests.get')
     def test_RawCrash(self, rget):
+
+        def mocked_get(url, **options):
+            if 'crash_data/uuid/abc123' in url:
+                return Response("""
+            {
+            "InstallTime": "1366691881",
+            "AdapterVendorID": "0x8086",
+            "Theme": "classic/1.0",
+            "Version": "23.0a1",
+            "id": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}",
+            "Vendor": "Mozilla",
+            "EMCheckCompatibility": "true",
+            "Throttleable": "0",
+            "URL": "http://system.gaiamobile.org:8080/",
+            "version": "23.0a1",
+            "AdapterDeviceID": "0x  46",
+            "ReleaseChannel": "nightly",
+            "submitted_timestamp": "2013-04-29T16:42:28.961187+00:00",
+            "buildid": "20130422105838",
+            "timestamp": 1367253748.9612169,
+            "Notes": "AdapterVendorID: 0x8086, AdapterDeviceID: ...",
+            "CrashTime": "1366703112",
+            "FramePoisonBase": "7ffffffff0dea000",
+            "FramePoisonSize": "4096",
+            "StartupTime": "1366702830",
+            "Add-ons": "activities%40gaiamobile.org:0.1,alarms%40gaiam...",
+            "BuildID": "20130422105838",
+            "SecondsSinceLastCrash": "23484",
+            "ProductName": "Firefox",
+            "legacy_processing": 0,
+            "ProductID": "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
+            }
+            """)
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
         url = reverse('api:model_wrapper', args=('RawCrash',))
         response = self.client.get(url)
-        # blacklisted model
-        eq_(response.status_code, 404)
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_(dump['errors']['crash_id'])
+
+        response = self.client.get(url, {
+            'crash_id': 'abc123'
+        })
+        eq_(response.status_code, 200)
+        dump = json.loads(response.content)
+        ok_('id' in dump)
+        ok_('URL' not in dump)  # right?
+
+    @mock.patch('requests.get')
+    def test_RawCrash_binary_blob(self, rget):
+
+        def mocked_get(url, **options):
+            if 'crash_data/uuid/abc' in url:
+                return Response('\xe0')
+            raise NotImplementedError(url)
+
+        rget.side_effect = mocked_get
+
+        url = reverse('api:model_wrapper', args=('RawCrash',))
+        response = self.client.get(url, {
+            'crash_id': 'abc'
+        })
+        eq_(response.status_code, 400)
 
     @mock.patch('requests.get')
     def test_CommentsBySignature(self, rget):
@@ -1147,7 +1209,6 @@ class TestViews(BaseTestViews):
         response = self.client.get(url)
         dump = json.loads(response.content)
         ok_(dump['errors']['product'])
-        ok_(dump['errors']['platforms'])
         ok_(dump['errors']['version'])
         ok_(dump['errors']['report_type'])
 

@@ -718,6 +718,35 @@ class RawCrash(SocorroMiddleware):
         'format': 'datatype',
     }
 
+    API_WHITELIST = (
+        'InstallTime',
+        'AdapterVendorID',
+        'Theme',
+        'Version',
+        'id',
+        'Vendor',
+        'EMCheckCompatibility',
+        'Throttleable',
+        #'URL',
+        'version',
+        'AdapterDeviceID',
+        'ReleaseChannel',
+        'submitted_timestamp',
+        'buildid',
+        'timestamp',
+        'Notes',
+        'CrashTime',
+        'FramePoisonBase',
+        'FramePoisonSize',
+        'StartupTime',
+        'Add-ons',
+        'BuildID',
+        'SecondsSinceLastCrash',
+        'ProductName',
+        'legacy_processing',
+        'ProductID',
+    )
+
     def get(self, **kwargs):
         format = kwargs.get('format', 'meta')
         if format == 'raw_crash':

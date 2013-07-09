@@ -68,7 +68,7 @@ class FormWrapper(forms.Form):
 
 # Names of models we don't want to serve at all
 BLACKLIST = (
-    'RawCrash',
+    # empty at the moment
 )
 
 
@@ -110,6 +110,13 @@ def model_wrapper(request, model_name):
                 # that means we can't assume that the BadStatusCodeError
                 # has a typically formatted error message
                 pass
+            raise
+        except ValueError as e:
+            if 'No JSON object could be decoded' in e:
+                return http.HttpResponse(
+                    'Not a valid JSON response',
+                    status=400
+                )
             raise
 
         # it being set to None means it's been deliberately disabled
